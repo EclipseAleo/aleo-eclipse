@@ -1,0 +1,19 @@
+# Ignore Leo build artifacts
+build/
+outputs/
+leo.lock
+program.json
+
+# Ignore build artifacts in sub-modules\*/build/
+*/outputs/
+
+# MacOS system files
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
