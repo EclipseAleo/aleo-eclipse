@@ -1,8 +1,8 @@
 import eclipse_oracle_feed.aleo;
-import eclipse_oracle_staking.aleo;
+import eclipse_oracle_staking_2.aleo;
 import token_registry.aleo;
 
-program eclipse_oracle_submit.aleo {
+program eclipse_oracle_submit_2.aleo {
     struct FeedConfig {
         creator: address,
         min_stake: u64,
@@ -13,7 +13,7 @@ program eclipse_oracle_submit.aleo {
     }
 
     const submit_reward: u16 = 1u16;
-    const token_id: field = 12345678910field;
+    const token_id: field = 123456789101field;
 
     mapping temp_price: field => u128;
     mapping last_ts: field => u64;
@@ -38,7 +38,7 @@ program eclipse_oracle_submit.aleo {
         assert(!cfg.paused);
 
         let key: field = feed_id + (caller as field);
-        let stake: u128  = eclipse_oracle_staking.aleo/stakes.get_or_use(key, 0u128);
+        let stake: u128  = eclipse_oracle_staking_2.aleo/stakes.get_or_use(key, 0u128);
         assert(stake > 0u128);
 
         let height: u32 = block.height;
@@ -46,7 +46,9 @@ program eclipse_oracle_submit.aleo {
         let prev_ts: u64 = last_ts.get_or_use(key, 0u64);
         assert(now > prev_ts);
         let delta: u64 = now - prev_ts;
-        assert(delta <= (cfg.aggregation_window as u64));
+        if (prev_ts != 0u64) {
+            assert(delta <= (cfg.aggregation_window as u64));
+        }
 
         assert(price > 0u128);
 

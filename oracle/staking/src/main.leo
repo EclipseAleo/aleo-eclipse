@@ -1,9 +1,9 @@
 import eclipse_oracle_feed.aleo;
 import token_registry.aleo;
 
-program eclipse_oracle_staking.aleo {
+program eclipse_oracle_staking_2.aleo {
     const MAX_PROVIDERS: u32 = 8u32;
-    const token_id: field = 12345678910field;
+    const token_id: field = 123456789101field;
 
     struct FeedConfig {
         creator: address,
@@ -43,6 +43,7 @@ program eclipse_oracle_staking.aleo {
         public caller: address
     ) {
         f.await();
+        
         let cfg: FeedConfig = eclipse_oracle_feed.aleo/feeds.get(feed_id);
         assert(!cfg.paused);
         assert(amount > 0u128);
@@ -119,7 +120,7 @@ program eclipse_oracle_staking.aleo {
         public feed_id: field,
         public provider: address
     ) -> Future {
-        assert(self.caller == eclipse_oracle_aggregate.aleo);
+        assert(self.caller == eclipse_oracle_aggregate_2.aleo);
         return finalize_slash(feed_id, provider);
     }
     async function finalize_slash(
