@@ -1,7 +1,7 @@
 import token_registry.aleo;
 
-program eclipse_oracle_token.aleo {
-    const token_id: field = 12345678910field;
+program eclipse_oracle_token_2.aleo {
+    const token_id: field = 123456789101field;
     const name: u128 = 332565922916059772120165u128;
     const symbol: u128 = 1179406164u128;
     const decimals: u8 = 8u8;
@@ -11,8 +11,8 @@ program eclipse_oracle_token.aleo {
     const external_authorization_party: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
 
     const treasury: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const staking_contract: address = eclipse_oracle_staking.aleo;
-    const aggregate_contract: address = eclipse_oracle_aggregate.aleo;
+    const staking_contract: address = eclipse_oracle_staking_2.aleo;
+    const aggregate_contract: address = eclipse_oracle_aggregate_2.aleo;
     const liquidity_vault: address = aleo1c39lrkdvnkchl79qza20vqemyytdmye7xa8wu6pqmzeqqe400yfq4qzg6w;
     const team_vesting: address = aleo18suj4glqvejgu753r8s2u8kn57n3macu2yw06rcjpmu5kldfnqxq6g8kqd;
 
@@ -53,7 +53,6 @@ program eclipse_oracle_token.aleo {
         );
         return finalize_initialize(f,start_block);
     }
-
     async function finalize_initialize(
         f: Future,
         public start_block: u32
@@ -197,5 +196,18 @@ program eclipse_oracle_token.aleo {
         assert(current_block >= last + period_blocks);
         team_last_block.set(token_id,last + period_blocks);
         f.await();
+    }
+
+    async transition update_admin(public admin: address) -> Future {
+        assert(self.caller==treasury);
+        let fut:Future= token_registry.aleo/update_token_management(
+            token_id,
+            admin,
+            external_authorization_party
+        );
+        return finalize_update_admin(fut);
+    }
+    async function finalize_update_admin(fut:Future) {
+        fut.await();
     }
 }
