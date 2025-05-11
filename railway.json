@@ -1,0 +1,16 @@
+{
+    "services": [
+      {
+        "name": "submit-price",
+        "rootDirectory": "sdk",
+        "build": {
+          "dockerfilePath": "Dockerfile",
+          "buildContext": "sdk"
+        },
+        "run": {
+          "command": "pm2-runtime ecosystem.config.js"
+        }
+      }
+    ]
+  }
+  
