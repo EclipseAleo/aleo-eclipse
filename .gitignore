@@ -17,3 +17,7 @@ program.json
 *.tmp
 *.temp
 
+# Node modules
+node_modules/
+*package-lock.json
+*/node_modules/

@@ -115,17 +115,17 @@ leo deploy --network $NETWORK --private-key "$PK_CREATOR"
 ### 2. Initialize the token & allocate genesis balances
 
 ```sh
-leo execute eclipse_oracle_token_2.aleo \
+leo execute --program eclipse_oracle_token_2.aleo \
            initialize $ADDR_CREATOR <block_height>u32 \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 
 # First airdrop to 8 genesis providers
-leo execute eclipse_oracle_token_2.aleo \
+leo execute --program eclipse_oracle_token_2.aleo \
            airdrop_initial <p0> <p1> <p2> <p3> <p4> <p5> <p6> <p7> $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 
 # Grant mint role to staking & aggregate contracts
-leo execute eclipse_oracle_token_2.aleo \
+leo execute --program eclipse_oracle_token_2.aleo \
            grant_role $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 ```
@@ -133,7 +133,7 @@ leo execute eclipse_oracle_token_2.aleo \
 ### 3. Create a new feed
 
 ```sh
-leo execute eclipse_oracle_feed.aleo \
+leo execute --program eclipse_oracle_feed.aleo \
            create_feed <id>field >min_stake>u64 <spread>u64 <aggr_window>u32 <val_window>u32 $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 ```
@@ -142,22 +142,22 @@ leo execute eclipse_oracle_feed.aleo \
 
 ```sh
 # Stake 100 tokens
-leo execute eclipse_oracle_staking_2.aleo \
+leo execute --program eclipse_oracle_staking_2.aleo \
            stake <id>field 10000000000u128 $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 
 # Submit a price
-leo execute eclipse_oracle_submit_2.aleo \
+leo execute --program eclipse_oracle_submit_2.aleo \
            submit_price <id>field 235400000000000000u128 $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 
 # Propose the median
-leo execute eclipse_oracle_aggregate_2.aleo \
+leo execute --program eclipse_oracle_aggregate_2.aleo \
            propose <id>field 235400000000000000u128 $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 
 # Finalize after challenge period
-leo execute eclipse_oracle_aggregate_2.aleo \
+leo execute --program eclipse_oracle_aggregate_2.aleo \
            finalize_aggregate <id>field $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 ```
