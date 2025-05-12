@@ -3,7 +3,7 @@ module.exports = {
       // Instance 1
       {
         name: 'submit-price-1',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK1,
           ADDR_PROVIDER: process.env.ADDR1,
@@ -19,7 +19,7 @@ module.exports = {
       // Instance 2
       {
         name: 'submit-price-2',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK2,
           ADDR_PROVIDER: process.env.ADDR2,
@@ -35,7 +35,7 @@ module.exports = {
       // Instance 3
       {
         name: 'submit-price-3',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK3,
           ADDR_PROVIDER: process.env.ADDR3,
@@ -51,7 +51,7 @@ module.exports = {
       // Instance 4
       {
         name: 'submit-price-4',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK4,
           ADDR_PROVIDER: process.env.ADDR4,
@@ -67,7 +67,7 @@ module.exports = {
       // Instance 5
       {
         name: 'submit-price-5',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK5,
           ADDR_PROVIDER: process.env.ADDR5,
@@ -83,7 +83,7 @@ module.exports = {
       // Instance 6
       {
         name: 'submit-price-6',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK6,
           ADDR_PROVIDER: process.env.ADDR6,
@@ -99,7 +99,7 @@ module.exports = {
       // Instance 7
       {
         name: 'submit-price-7',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK7,
           ADDR_PROVIDER: process.env.ADDR7,
@@ -115,7 +115,7 @@ module.exports = {
       // Instance 8
       {
         name: 'submit-price-8',
-        script: 'submit_price.js',
+        script: 'submit.js',
         env: {
           PK_PROVIDER: process.env.PK8,
           ADDR_PROVIDER: process.env.ADDR8,

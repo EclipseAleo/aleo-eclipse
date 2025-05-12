@@ -9,4 +9,4 @@ COPY . .
 
 RUN npm install pm2 -g
 
-CMD ["pm2-runtime", "ecosystem.config.js"]
+CMD ["pm2-runtime", "ecosystem.config.cjs"]
