@@ -17,8 +17,9 @@
     }
   },
   "include": [
-    "**/*.ts"                                // Inclut tous les fichiers .ts dans le projet
-, "utils/mathUtils.ts"  ],
+    "**/*.ts",
+    "utils/**/*.ts"
+  ],
   "exclude": [
     "node_modules",                        // Exclut le dossier node_modules
     "dist"                                 // Exclut le dossier de sortie
