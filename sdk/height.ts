@@ -5,8 +5,7 @@ import "dotenv/config";
 async function getCurrentBlockHeight(): Promise<number> {
   const url = new URL(
     process.env.EXPLORER_ENDPOINT + "/" + process.env.NETWORK + "/latest/height"
-  ).toString();
-  console.log(url);
+  );
   return new Promise<number>((resolve, reject) => {
     https
       .get(url, (res) => {
@@ -35,7 +34,7 @@ async function getCurrentBlockHeight(): Promise<number> {
 (async () => {
   try {
     const height: number = await getCurrentBlockHeight();
-    console.log('Block height fetched successfully:', height);
+    console.log("Block height fetched successfully:", height);
   } catch (err: any) {
     console.error(
       "❌ Impossible de récupérer la hauteur de bloc :",
