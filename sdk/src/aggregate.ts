@@ -7,10 +7,7 @@ import {
   NetworkRecordProvider,
   PrivateKey,
 } from "@provablehq/sdk";
-import {
-  readAleoMapping,
-  executeOnChain,
-} from "../utils/aleoUtils";
+import { readAleoMapping, executeOnChain } from "../utils/aleoUtils";
 import { median } from "../utils/mathUtils";
 import { parseNumberEnv } from "../utils/envUtils";
 // =====================================================
@@ -80,8 +77,6 @@ export function getEnv(): AggregateEnv {
     STAKE_PROGRAM_ID,
   };
 }
-
-
 
 // =====================================================
 //  ACCÈS AU RÉSEAU ALEO (LECTURE DES PROVIDERS ET PRIX)
@@ -191,6 +186,7 @@ export async function getProviderPrices(
  * @param medianPrice Valeur médiane à proposer
  * @param addrProvider Adresse du provider
  * @param privateKey Clé privée du provider
+ * @param fee Les frais de priorité à appliquer
  * @returns {Promise<string>} L'identifiant de la transaction
  * @throws {Error} En cas d'échec de la transaction
  */
@@ -200,7 +196,8 @@ export async function proposeMedian(
   recordIdField: string,
   medianPrice: bigint,
   addrProvider: string,
-  privateKey: string
+  privateKey: string,
+  fee: number
 ): Promise<string> {
   return executeOnChain(
     pm,
@@ -210,7 +207,7 @@ export async function proposeMedian(
       inputs: [recordIdField, medianPrice.toString() + "u128", addrProvider],
       privateKey,
       privateFee: false,
-      priorityFee: 0,
+      priorityFee: fee,
     },
     "propose"
   );
@@ -223,6 +220,7 @@ export async function proposeMedian(
  * @param recordIdField Champ record utilisé pour l'accès mapping
  * @param addrProvider Adresse du provider
  * @param privateKey Clé privée du provider
+ * @param fee Les frais de priorité à appliquer
  * @returns {Promise<string>} L'identifiant de la transaction
  * @throws {Error} En cas d'échec de la transaction
  */
@@ -231,7 +229,8 @@ export async function finalizeAggregate(
   aggregateProgramId: string,
   recordIdField: string,
   addrProvider: string,
-  privateKey: string
+  privateKey: string,
+  fee: number
 ): Promise<string> {
   return executeOnChain(
     pm,
@@ -241,7 +240,7 @@ export async function finalizeAggregate(
       inputs: [recordIdField, addrProvider],
       privateKey,
       privateFee: false,
-      priorityFee: 0,
+      priorityFee: fee,
     },
     "finalize_aggregate"
   );
@@ -299,7 +298,8 @@ export async function runAggregate(): Promise<void> {
       RECORD_ID_FIELD,
       medianPrice,
       env.ADDR_PROVIDER,
-      account.privateKey()
+      account.privateKey(),
+      env.FEE
     );
   } catch (err) {
     console.error("Erreur lors de la proposition de la médiane:", err);
@@ -312,7 +312,8 @@ export async function runAggregate(): Promise<void> {
       env.AGGREGATE_PROGRAM_ID,
       RECORD_ID_FIELD,
       env.ADDR_PROVIDER,
-      account.privateKey()
+      account.privateKey(),
+      env.FEE
     );
   } catch (err) {
     console.error("Erreur lors de la finalisation de l'agrégation:", err);

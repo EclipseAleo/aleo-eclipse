@@ -125,7 +125,7 @@ export async function runStake(): Promise<void> {
         inputs,
         privateKey: account.privateKey(),
         privateFee: false,
-        priorityFee: 0,
+        priorityFee: env.FEE,
       },
       "stake"
     );

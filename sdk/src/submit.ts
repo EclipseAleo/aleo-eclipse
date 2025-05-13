@@ -230,7 +230,7 @@ export async function runSubmit(): Promise<void> {
       {
         programName: env.SUBMIT_PROGRAM_ID,
         functionName: "submit_price",
-        priorityFee: 0,
+        priorityFee: env.FEE,
         privateKey: account.privateKey(),
         privateFee: false,
         inputs: [RECORD_ID_FIELD, priceU128, env.ADDR_PROVIDER],
