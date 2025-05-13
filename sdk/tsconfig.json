@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es2020",                       // Cible la version JavaScript moderne
+    "module": "esnext",                     // Utilise les modules ES modernes
+    "moduleResolution": "node",           // Résolution des modules style Node.js
+    "esModuleInterop": true,                 // Permet l'interopérabilité avec les modules CommonJS
+    "forceConsistentCasingInFileNames": true, // Assure la cohérence de la casse des noms de fichiers
+    "strict": true,                          // Active toutes les vérifications strictes
+    "skipLibCheck": true,                    // Ignore la vérification des types des fichiers de déclaration (.d.ts)
+    "resolveJsonModule": true,               // Permet d'importer des fichiers JSON
+    "outDir": "./dist",                        // Répertoire de sortie pour les fichiers compilés
+    "rootDir": "./",                         // Répertoire racine des sources (pour s'assurer que tous les .ts sont sous celui-ci)
+    "sourceMap": true,                       // Génère les source maps
+    "baseUrl": ".",                          // Base pour les chemins non relatifs
+    "paths": {
+      "*": ["node_modules/*"]
+    }
+  },
+  "include": [
+    "**/*.ts"                                // Inclut tous les fichiers .ts dans le projet
+  ],
+  "exclude": [
+    "node_modules",                        // Exclut le dossier node_modules
+    "dist"                                 // Exclut le dossier de sortie
+  ]
+} 
