@@ -1,5 +1,5 @@
 import "dotenv/config";
-import fetch, { Response as FetchResponse } from "node-fetch";
+import fetch from "node-fetch";
 import { parseUnits } from "ethers";
 import {
   Account,
@@ -36,9 +36,6 @@ interface CoinMarketCapResponse {
 interface CoinStatsResponse {
   price: number;
   [key: string]: any;
-}
-interface TransactionConfirmationStatus {
-  status: string;
 }
 
 export interface SubmitEnv {
@@ -119,15 +116,17 @@ export function getSubmitEnv(): SubmitEnv {
  * @throws {Error} Si aucun prix n'est récupéré
  */
 export async function fetchOnChainPrice(env: SubmitEnv): Promise<string> {
+  const CG_URL =
+    "https://api.coingecko.com/api/v3/simple/price?ids=aleo&vs_currencies=usd";
+  const CMC_URL =
+    "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=ALEO";
+  const CS_URL = "https://openapiv1.coinstats.app/coins/aleo";
   const prices: bigint[] = [];
   // 1) CoinGecko
   try {
-    const cgRes = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=aleo&vs_currencies=usd",
-      env.CMC_API_KEY
-        ? { headers: { "X-CMC_PRO_API_KEY": env.CMC_API_KEY } }
-        : {}
-    );
+    const cgRes = await fetch(CG_URL, {
+      headers: { "X-CMC_PRO_API_KEY": env.CMC_API_KEY },
+    });
     if (cgRes.ok) {
       const cgJson = (await cgRes.json()) as CoinGeckoResponse;
       if (cgJson?.aleo?.usd) {
@@ -146,10 +145,9 @@ export async function fetchOnChainPrice(env: SubmitEnv): Promise<string> {
   }
   // 2) CoinMarketCap
   try {
-    const cmcRes = await fetch(
-      "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=ALEO",
-      { headers: { "X-CMC_PRO_API_KEY": env.CMC_API_KEY } }
-    );
+    const cmcRes = await fetch(CMC_URL, {
+      headers: { "X-CMC_PRO_API_KEY": env.CMC_API_KEY },
+    });
     if (cmcRes.ok) {
       const cmcJson = (await cmcRes.json()) as CoinMarketCapResponse;
       const cmcPrice = cmcJson?.data?.ALEO?.quote?.USD?.price;
@@ -168,7 +166,7 @@ export async function fetchOnChainPrice(env: SubmitEnv): Promise<string> {
   }
   // 3) Coinstats
   try {
-    const csRes = await fetch("https://openapiv1.coinstats.app/coins/aleo", {
+    const csRes = await fetch(CS_URL, {
       headers: { "X-API-KEY": env.CS_API_KEY, accept: "application/json" },
     });
     if (csRes.ok) {
