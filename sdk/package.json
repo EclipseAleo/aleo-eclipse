@@ -15,7 +15,14 @@
     "@provablehq/sdk": "^0.9.0",
     "aes-js": "^3.1.2",
     "dotenv": "^16.5.0",
-    "ethers": "^5.7.2",
+    "ethers": "^6.14.0",
+    "ethers-types": "^3.18.1",
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "esbuild": "^0.25.4",
+    "typescript": "^5.4.5",
+    "tsx": "^4.11.0"
   }
 }
