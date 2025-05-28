@@ -7,8 +7,9 @@ program eclipse_lending_usda_vault.aleo {
     const USDA_TOKEN_ID: field = 445566778899field;
     const PROVISION_FACTOR: u128 = 125u128;
     const TREASURY : address = eclipse_lending_usda_vault.aleo;   
-    const USDA_FEED_ID: field = 0field;
+    const USDA_FEED_ID: field = 2field;
     const LLTV : u128 = 125u128;
+    const ALEO_ID : field = 3443843282313283355522573239085696902919850365217539366784739393210722344986field; // ID de l'oracle Aleo, à remplacer par l'ID réel
 
     mapping priv_commit: u64 => field;
 
@@ -42,9 +43,9 @@ program eclipse_lending_usda_vault.aleo {
         let fut: Future = token_registry.aleo/register_token(
             USDA_TOKEN_ID,
             567137312326300096786987u128, // "USDA"
-            1480805620u128,               // symbol
+            1480805620u128,              
             18u8,
-            1_000_000_000_000_000_000u128,  // max supply
+            1_000_000_000_000_000_000u128,
             false,
             ADMIN
         );
@@ -59,14 +60,14 @@ program eclipse_lending_usda_vault.aleo {
     // 2 Dépôt de collatéral
     // --------------------------------------------------------------------
     async transition deposit(
-        private coll_record: credits.aleo/credits,
         public amount: u64,
         public price: u128,
         public last_id : u64,
         private caller: address,
         private nonce_field: field,
-    ) -> (Position, credits.aleo/credits, credits.aleo/credits, Future) {
-        let (vault_record, user_remainder):(credits.aleo/credits, credits.aleo/credits)=credits.aleo/transfer_private(coll_record, TREASURY, amount);
+        private token_record: token_registry.aleo/Token
+    ) -> (Position, token_registry.aleo/Token, Future) {
+        let (token, fut):(token_registry.aleo/Token, Future)=token_registry.aleo/transfer_private_to_public(TREASURY, amount as u128, token_record);
 
         let new_id: u64 = last_id + 1u64;
 
@@ -75,9 +76,10 @@ program eclipse_lending_usda_vault.aleo {
             id: new_id
         };
 
-        return (pos, vault_record, user_remainder, finalize_deposit(new_id,amount,price,caller,nonce_field));
+        return (pos, token, finalize_deposit(fut, new_id,amount,price,caller,nonce_field));
     }
     async function finalize_deposit(
+        public fut: Future,
         public pos_id: u64,
         public amount: u64,
         public price:  u128,
@@ -87,6 +89,8 @@ program eclipse_lending_usda_vault.aleo {
         let current:u64 = next_id.get_or_use(USDA_TOKEN_ID, 0u64);
         assert(pos_id == current + 1u64);
         next_id.set(USDA_TOKEN_ID, current+1u64);
+
+        fut.await();
         
         let commit: field = Poseidon4::hash_to_field([
             caller as field,
@@ -207,22 +211,23 @@ program eclipse_lending_usda_vault.aleo {
     async transition withdraw(
         public pos: Position,
         public price: u128,
-        public amount: u64,
-        private coll_record: credits.aleo/credits,
-    ) -> (Position, credits.aleo/credits, credits.aleo/credits, Future) {
+        public amount: u64
+    ) -> (Position, token_registry.aleo/Token, Future) {
         assert(pos.owner == self.caller);
-        assert(coll_record.owner == TREASURY);
 
-        let (vault_record, user_remainder):(credits.aleo/credits, credits.aleo/credits) = credits.aleo/transfer_private(coll_record, self.caller, amount);
-        return (pos, vault_record, user_remainder, finalize_withdraw(pos.id, price, amount));
+        let (token, fut):(token_registry.aleo/Token, Future) = token_registry.aleo/transfer_public_to_private(ALEO_ID, self.caller, amount as u128, false);
+        return (pos, token, finalize_withdraw(fut, pos.id, price, amount));
     }
    async function finalize_withdraw(
+        fut: Future,
         public pos_id: u64,
         public price: u128,
         public amount: u64
    ) {
         let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
         assert(price == oracle_price);
+
+        fut.await();
 
         let meta = metas.get(pos_id);
         assert(!liquidated_ids.get_or_use(pos_id, false));
@@ -259,9 +264,10 @@ program eclipse_lending_usda_vault.aleo {
         public price: u128,
         public usda_sent: u128,
         public debt_amt: u128,
-    ) -> Future {
-        let fut_burn: Future = token_registry.aleo/burn_public(USDA_TOKEN_ID, self.caller, debt_amt);
-        return finalize_liquidate(fut_burn, id, usda_sent, price);
+        private record_token: token_registry.aleo/Token
+    ) -> (token_registry.aleo/Token, Future) {
+        let (token, fut_burn): (token_registry.aleo/Token, Future) = token_registry.aleo/burn_private(record_token, usda_sent);
+        return (token, finalize_liquidate(fut_burn, id, usda_sent, price));
     }
     async function finalize_liquidate(
         fut_burn: Future,
@@ -292,9 +298,9 @@ program eclipse_lending_usda_vault.aleo {
     async transition claim_refund(
         public id: u64,
         public refund: u128
-    ) -> Future {
-        let fut_mint: Future = token_registry.aleo/mint_public(USDA_TOKEN_ID, self.caller, refund, 0u32);
-        return finalize_claim_refund(fut_mint, id, refund);
+    ) -> (token_registry.aleo/Token, Future) {
+        let (token, fut_mint): (token_registry.aleo/Token, Future) = token_registry.aleo/mint_private(USDA_TOKEN_ID, self.caller, refund, false, 0u32);
+        return (token, finalize_claim_refund(fut_mint, id, refund));
     }
     async function finalize_claim_refund(
         fut_mint: Future,
@@ -303,7 +309,7 @@ program eclipse_lending_usda_vault.aleo {
     ) {
         fut_mint.await();
         let stored: u128 = liquidation_refund.get_or_use(id, 0u128);
-        assert(refund <= stored);
+        assert(refund == stored);
         liquidation_refund.remove(id);
     }
 
@@ -311,21 +317,20 @@ program eclipse_lending_usda_vault.aleo {
     // 5.3 : Récupération du collatéral
     async transition claim_collateral(
         public id: u64,
-        public coll: u64
-    ) -> Future {
-        let fut: Future = credits.aleo/transfer_public(self.caller, coll,);
-        return finalize_claim_collateral(fut, id, coll);
+        public amount: u64
+    ) -> (token_registry.aleo/Token, Future) {
+        let (token, fut): (token_registry.aleo/Token, Future) = token_registry.aleo/transfer_public_to_private(ALEO_ID, self.caller, amount as u128, false);
+        return (token, finalize_claim_collateral(fut, id, amount));
     }
 
     async function finalize_claim_collateral(
         fut: Future,
         public id: u64,
-        public coll: u64
+        public amount: u64
     ) {
         fut.await();
         let stored: u128 = liquidation_collateral.get_or_use(id, 0u128);
-        assert(coll as u128 == stored);
+        assert(amount as u128 == stored);
         liquidation_collateral.remove(id);
     }
-
 }
