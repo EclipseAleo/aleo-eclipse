@@ -1,217 +1,331 @@
 import token_registry.aleo;
 import eclipse_oracle_aggregate_2.aleo;
-import eclipse_lending_auction.aleo;
+import credits.aleo;
 
 program eclipse_lending_usda_vault.aleo {
-
     const ADMIN: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-
     const USDA_TOKEN_ID: field = 445566778899field;
-    const USDA_NAME: u128 = 567137312326300096786987u128;
-    const USDA_SYMBOL: u128 = 1480805620u128;
-    const USDA_DECIMALS: u8 = 18u8;
-    const USDA_MAX_SUPPLY: u128 = 1000000000000000u128;
+    const PROVISION_FACTOR: u128 = 125u128;
+    const TREASURY : address = eclipse_lending_usda_vault.aleo;   
+    const USDA_FEED_ID: field = 0field;
+    const LLTV : u128 = 125u128;
 
-    struct CollateralParam {
-        feed_id: field,
-        ltv_min: u128,
-        lltv: u128,
-        paused: bool
+    mapping priv_commit: u64 => field;
+
+    struct PositionMeta {
+        coll_amt: u128,
+        debt_amt: u128,
+        price_liq: u128,
+        max_debt: u128,
+        t_last: u64
     }
 
-    mapping allowed: field => CollateralParam;
-    mapping collateral: field => u128;
-    mapping debt_usda: address => u128;
+    record Position {
+        owner: address,
+        id: u64
+    }
+    
+    mapping liquidated_ids: u64 => bool;
+    mapping metas: u64 => PositionMeta;
+    mapping next_id: field => u64;
 
-    async transition initialize(public caller: address) -> Future {
+    inline is_owner(caller: address) {
         assert(caller == ADMIN);
-        let fut_reg: Future = token_registry.aleo/register_token(
+    }
+
+
+    // --------------------------------------------------------------------
+    // 1 Initialisation (enregistre USDA)
+    // --------------------------------------------------------------------
+    async transition initialize(public caller: address) -> Future {
+        is_owner(caller);
+        let fut: Future = token_registry.aleo/register_token(
             USDA_TOKEN_ID,
-            USDA_NAME,
-            USDA_SYMBOL,
-            USDA_DECIMALS,
-            USDA_MAX_SUPPLY,
+            567137312326300096786987u128, // "USDA"
+            1480805620u128,               // symbol
+            18u8,
+            1_000_000_000_000_000_000u128,  // max supply
             false,
             ADMIN
         );
-        return finalize_initialize(fut_reg);
+        return finalize_initialize(fut);
+    }
+    async function finalize_initialize(fut: Future) {
+        fut.await();
+        next_id.set(0field, 0u64);
     }
 
-    async function finalize_initialize(fut_reg: Future) {
-        fut_reg.await();
-    }
-
-    async transition add_collateral_token(
-        public token_id: field,
-        public feed_id: field,
-        public ltv_min: u128,
-        public lltv: u128,
-        public caller: address
-    ) -> Future {
-        return finalize_add_collateral_token(token_id, feed_id, ltv_min, lltv, caller);
-    }
-
-    async function finalize_add_collateral_token(
-        public token_id: field,
-        public feed_id: field,
-        public ltv_min: u128,
-        public lltv: u128,
-        public caller: address
-    ) {
-        assert(caller == ADMIN);
-        assert(ltv_min > lltv);
-        let cfg: CollateralParam = CollateralParam{
-            feed_id: feed_id,
-            ltv_min: ltv_min,
-            lltv: lltv,
-            paused: false
-        };
-        allowed.set(token_id, cfg);
-    }
-
+    // --------------------------------------------------------------------
+    // 2 Dépôt de collatéral
+    // --------------------------------------------------------------------
     async transition deposit(
-        public token_id: field,
-        public amount: u128,
-        public caller: address
-    ) -> Future {
-        let (temp, fut_move): (token_registry.aleo/Token, Future) =
-            token_registry.aleo/transfer_public_to_private(token_id, caller, amount, false);
-        return finalize_deposit(fut_move, token_id, amount, caller);
-    }
+        private coll_record: credits.aleo/credits,
+        public amount: u64,
+        public price: u128,
+        public last_id : u64,
+        private caller: address,
+        private nonce_field: field,
+    ) -> (Position, credits.aleo/credits, credits.aleo/credits, Future) {
+        let (vault_record, user_remainder):(credits.aleo/credits, credits.aleo/credits)=credits.aleo/transfer_private(coll_record, TREASURY, amount);
 
+        let new_id: u64 = last_id + 1u64;
+
+        let pos: Position = Position{
+            owner: caller,
+            id: new_id
+        };
+
+        return (pos, vault_record, user_remainder, finalize_deposit(new_id,amount,price,caller,nonce_field));
+    }
     async function finalize_deposit(
-        fut_move: Future,
-        public token_id: field,
-        public amount: u128,
-        public caller: address
+        public pos_id: u64,
+        public amount: u64,
+        public price:  u128,
+        public caller: address,
+        public nonce_field: field
     ) {
-        fut_move.await();
-        let cfg: CollateralParam = allowed.get(token_id);
-        assert(!cfg.paused);
-        assert(amount > 0u128);
-        let key: field = token_id + (caller as field);
-        let prev: u128 = collateral.get_or_use(key, 0u128);
-        collateral.set(key, prev + amount);
+        let current:u64 = next_id.get_or_use(USDA_TOKEN_ID, 0u64);
+        assert(pos_id == current + 1u64);
+        next_id.set(USDA_TOKEN_ID, current+1u64);
+        
+        let commit: field = Poseidon4::hash_to_field([
+            caller as field,
+            nonce_field,
+            0field,
+            0field
+        ]);
+        priv_commit.set(pos_id, commit);
+
+        let coll_val: u128 = (amount as u128) * price;
+        let price_liq: u128 = coll_val * LLTV / 100u128;
+        let max_debt: u128 = coll_val * PROVISION_FACTOR / 100u128;
+
+        metas.set(pos_id, PositionMeta{
+            coll_amt: amount as u128,
+            debt_amt: 0u128,
+            price_liq: price_liq,
+            max_debt: max_debt,
+            t_last: block.height as u64
+        });
     }
 
-    async transition withdraw(
-        public token_id: field,
-        public amount: u128,
-        public caller: address
-    ) -> Future {
-        let fut_out: Future = token_registry.aleo/transfer_public(token_id, caller, amount);
-        return finalize_withdraw(fut_out, token_id, amount, caller);
-    }
 
-    async function finalize_withdraw(
-        fut_out: Future,
-        public token_id: field,
-        public amount: u128,
-        public caller: address
-    ) {
-        let key: field = token_id + (caller as field);
-        let prev: u128 = collateral.get_or_use(key, 0u128);
-        assert(prev >= amount);
-        let cfg: CollateralParam = allowed.get(token_id);
-        let debt: u128 = debt_usda.get_or_use(caller, 0u128);
-        if (debt > 0u128) {
-            let price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
-            let remain: u128 = prev - amount;
-            let coll_val: u128 = remain * price;
-            assert(coll_val * 100u128 >= debt * cfg.ltv_min);
-        }
-        collateral.set(key, prev - amount);
-        fut_out.await();
-    }
-
+    // --------------------------------------------------------------------
+    // 3 Mint de USDA
+    // --------------------------------------------------------------------
     async transition mint(
-        public token_id: field,
         public usda_out: u128,
-        public caller: address
-    ) -> Future {
-        let fut_mint: Future = token_registry.aleo/mint_public(
-            USDA_TOKEN_ID,
-            caller,
-            usda_out,
-            0u32
-        );
-        return finalize_mint(fut_mint, token_id, usda_out, caller);
-    }
+        public price: u128,
+        private pos: Position,
+    ) -> (Position, token_registry.aleo/Token, Future) {
+        assert(pos.owner == self.caller);
 
+        let (record_obtained, fut_mint): (token_registry.aleo/Token, Future) = token_registry.aleo/mint_private(USDA_TOKEN_ID, self.caller, usda_out, false, 0u32);
+        return (pos, record_obtained, finalize_mint(fut_mint, pos.id, usda_out, price));
+    }
     async function finalize_mint(
         fut_mint: Future,
-        public token_id: field,
-        public usda_out: u128,
-        public caller: address
+        public pos_id: u64,
+        public out: u128,
+        public price: u128,
     ) {
+        assert(out > 0u128);
+        assert(price > 0u128);
+        assert(liquidated_ids.get_or_use(pos_id, false) == false);
+
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
+        assert(price == oracle_price);
+
         fut_mint.await();
-        let cfg: CollateralParam = allowed.get(token_id);
-        assert(!cfg.paused);
-        let key: field = token_id + (caller as field);
-        let coll_amt: u128 = collateral.get_or_use(key, 0u128);
-        assert(coll_amt > 0u128);
-        let price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
-        let coll_val: u128 = coll_amt * price;
-        let prev_debt: u128 = debt_usda.get_or_use(caller, 0u128);
-        let new_debt: u128 = prev_debt + usda_out;
-        assert(coll_val * 100u128 >= new_debt * cfg.ltv_min);
-        debt_usda.set(caller, new_debt);
+
+        let meta = metas.get(pos_id);
+        let coll_val = meta.coll_amt * price;
+        let new_debt = meta.debt_amt + out;
+        let max_debt = coll_val * PROVISION_FACTOR / 100u128;
+        assert(new_debt <= max_debt);
+        let price_liq = coll_val * LLTV / 100u128;
+
+        metas.set(pos_id, PositionMeta {
+            coll_amt: meta.coll_amt,
+            debt_amt: new_debt,
+            price_liq: price_liq,
+            max_debt: max_debt,
+            t_last: block.height as u64
+        });
     }
 
+
+    // --------------------------------------------------------------------
+    // 4 Remboursement (burn USDA)
+    // --------------------------------------------------------------------
     async transition burn(
         public usda_in: u128,
-        public caller: address
-    ) -> Future {
-        let fut_burn: Future = token_registry.aleo/burn_public(USDA_TOKEN_ID, caller, usda_in);
-        return finalize_burn(fut_burn, usda_in, caller);
+        public price: u128,
+        private pos: Position,
+        private token: token_registry.aleo/Token
+    ) -> (Position, token_registry.aleo/Token, Future) {
+        assert(pos.owner == self.caller);
+        let (token_obtained, fut_burn): (token_registry.aleo/Token, Future) = token_registry.aleo/burn_private(token, usda_in);
+        return (pos, token_obtained, finalize_burn(fut_burn, pos.id, usda_in, price));
     }
-
     async function finalize_burn(
         fut_burn: Future,
-        public usda_in: u128,
-        public caller: address
+        public pos_id: u64,
+        public in_: u128,
+        public price: u128,
+    ) {
+        assert(in_ > 0u128);
+        assert(price > 0u128);
+        assert(liquidated_ids.get_or_use(pos_id, false) == false);
+
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
+        assert(price == oracle_price);
+
+        fut_burn.await();
+
+        let meta = metas.get(pos_id);
+        assert(meta.debt_amt >= in_);
+
+        let new_debt = meta.debt_amt - in_;
+        let coll_val = meta.coll_amt * price;
+        let max_debt = coll_val * PROVISION_FACTOR / 100u128;
+        let price_liq = coll_val * LLTV / 100u128;
+
+        metas.set(pos_id, PositionMeta {
+            coll_amt: meta.coll_amt,
+            debt_amt: new_debt,
+            price_liq: price_liq,
+            max_debt: max_debt,
+            t_last: block.height as u64
+        });
+    }
+
+
+    // --------------------------------------------------------------------
+    // 5 Récupération du collatéral
+    // --------------------------------------------------------------------
+    async transition withdraw(
+        public pos: Position,
+        public price: u128,
+        public amount: u64,
+        private coll_record: credits.aleo/credits,
+    ) -> (Position, credits.aleo/credits, credits.aleo/credits, Future) {
+        assert(pos.owner == self.caller);
+        assert(coll_record.owner == TREASURY);
+
+        let (vault_record, user_remainder):(credits.aleo/credits, credits.aleo/credits) = credits.aleo/transfer_private(coll_record, self.caller, amount);
+        return (pos, vault_record, user_remainder, finalize_withdraw(pos.id, price, amount));
+    }
+   async function finalize_withdraw(
+        public pos_id: u64,
+        public price: u128,
+        public amount: u64
+   ) {
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
+        assert(price == oracle_price);
+
+        let meta = metas.get(pos_id);
+        assert(!liquidated_ids.get_or_use(pos_id, false));
+ 
+        let amt128: u128 = amount as u128;
+        assert(amt128 <= meta.coll_amt);
+        let remaining_coll: u128 = meta.coll_amt - amt128;
+
+        let coll_val_rem = remaining_coll * price;
+        let max_debt_rem = coll_val_rem * PROVISION_FACTOR / 100u128;
+        assert(meta.debt_amt <= max_debt_rem);
+
+        let price_liq_new = remaining_coll * LLTV / 100u128;
+        metas.set(pos_id, PositionMeta {
+            coll_amt: remaining_coll,
+            debt_amt: meta.debt_amt,
+            price_liq: price_liq_new,
+            max_debt: max_debt_rem,
+            t_last: block.height as u64
+        });
+    }
+
+
+
+    // --------------------------------------------------------------------
+    // 5 Liquidation permissionless
+    // --------------------------------------------------------------------
+    mapping liquidation_refund: u64 => u128;
+    mapping liquidation_collateral: u64 => u128;
+
+    // 5.1 : Liquidation de la position
+    async transition liquidate(
+        public id: u64,
+        public price: u128,
+        public usda_sent: u128,
+        public debt_amt: u128,
+    ) -> Future {
+        let fut_burn: Future = token_registry.aleo/burn_public(USDA_TOKEN_ID, self.caller, debt_amt);
+        return finalize_liquidate(fut_burn, id, usda_sent, price);
+    }
+    async function finalize_liquidate(
+        fut_burn: Future,
+        public id: u64,
+        public usda_sent: u128,
+        public price: u128
     ) {
         fut_burn.await();
-        let prev: u128 = debt_usda.get_or_use(caller, 0u128);
-        assert(prev >= usda_in);
-        debt_usda.set(caller, prev - usda_in);
+
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
+        assert(price == oracle_price);
+
+        let meta: PositionMeta = metas.get(id);
+        assert(price <= meta.price_liq);
+
+        let refund: u128 = usda_sent > meta.debt_amt ? usda_sent - meta.debt_amt : 0u128;
+
+        liquidation_refund.set(id, refund);
+        liquidation_collateral.set(id, meta.coll_amt);
+
+        priv_commit.remove(id);
+        metas.remove(id);
+        liquidated_ids.set(id, true);
     }
 
-    async transition liquidate(
-        public victim: address,
-        public token_id: field,
-        public collateral_amt_in: u128,
-        public debt_amt_in: u128,
-        public caller: address
+
+    // 5.2 : Récupération des fonds engagés en surplus (pour les gens bêtes mdr)
+    async transition claim_refund(
+        public id: u64,
+        public refund: u128
     ) -> Future {
-        let fut_auc: Future = eclipse_lending_auction.aleo/start_auction(
-            victim,
-            token_id,
-            collateral_amt_in,
-            debt_amt_in,
-            caller
-        );
-        return finalize_liquidate(fut_auc, victim, token_id, collateral_amt_in, debt_amt_in);
+        let fut_mint: Future = token_registry.aleo/mint_public(USDA_TOKEN_ID, self.caller, refund, 0u32);
+        return finalize_claim_refund(fut_mint, id, refund);
+    }
+    async function finalize_claim_refund(
+        fut_mint: Future,
+        public id: u64,
+        public refund: u128
+    ) {
+        fut_mint.await();
+        let stored: u128 = liquidation_refund.get_or_use(id, 0u128);
+        assert(refund <= stored);
+        liquidation_refund.remove(id);
     }
 
-    async function finalize_liquidate(
-        fut_auc: Future,
-        public victim: address,
-        public token_id: field,
-        public coll_amt: u128,
-        public debt_amt: u128
-    ) {
-        let key: field = token_id + (victim as field);
-        let stored_coll: u128 = collateral.get_or_use(key, 0u128);
-        let stored_debt: u128 = debt_usda.get_or_use(victim, 0u128);
-        assert(stored_coll == coll_amt);
-        assert(stored_debt == debt_amt);
-        let cfg: CollateralParam = allowed.get(token_id);
-        let price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
-        let coll_val: u128 = coll_amt * price;
-        assert(coll_val * 100u128 < debt_amt * cfg.lltv);
-        collateral.set(key, 0u128);
-        debt_usda.set(victim, 0u128);
-        fut_auc.await();
+
+    // 5.3 : Récupération du collatéral
+    async transition claim_collateral(
+        public id: u64,
+        public coll: u64
+    ) -> Future {
+        let fut: Future = credits.aleo/transfer_public(self.caller, coll,);
+        return finalize_claim_collateral(fut, id, coll);
     }
+
+    async function finalize_claim_collateral(
+        fut: Future,
+        public id: u64,
+        public coll: u64
+    ) {
+        fut.await();
+        let stored: u128 = liquidation_collateral.get_or_use(id, 0u128);
+        assert(coll as u128 == stored);
+        liquidation_collateral.remove(id);
+    }
+
 }
