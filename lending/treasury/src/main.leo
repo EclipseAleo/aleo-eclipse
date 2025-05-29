@@ -1,10 +1,21 @@
+////////////////////////////////////////////////////////////////////////////////
+// Eclipse Lending – Treasury 
+//
+// Author : **Florent Gaujal** <https://github.com/floflo777>
+// Date   : 2025-05-30
+//
+// ### Purpose
+// This program manages the treasury for Eclipse Lending, allowing users to stake and withdraw ECLP tokens, and claim fees in USDA tokens.
+
+
 import token_registry.aleo;
-import eclipse_lending_usda_vault_6.aleo;
+import eclipse_lending_usda_vault_7.aleo;
 
 program eclipse_lending_treasury.aleo {
 
     const ADMIN: address  = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const STAKE_TOKEN_ID: field = 44556677889913field;
+    const USDA_TOKEN_ID: field = 44556677889914field;
+    const ECLP_TOKEN_ID: field = 123field;
 
     mapping stakes: address => u128;
     mapping total_staked: field => u128;
@@ -21,7 +32,7 @@ program eclipse_lending_treasury.aleo {
         public amount: u128,
         public caller: address
     ) -> Future {
-        let fut: Future = token_registry.aleo/transfer_public_as_signer(STAKE_TOKEN_ID,treasury.aleo,amount);
+        let fut: Future = token_registry.aleo/transfer_public_as_signer(ECLP_TOKEN_ID,treasury.aleo,amount);
         return finalize_stake(fut, amount, caller);
     }
 
@@ -35,13 +46,13 @@ program eclipse_lending_treasury.aleo {
 
         let prev: u128 = stakes.get_or_use(caller, 0u128);
         if (prev == 0u128) {
-            let current_fees: u128 = eclipse_lending_usda_vault_6.aleo/total_fees.get_or_use(STAKE_TOKEN_ID,0u128);
+            let current_fees: u128 = eclipse_lending_usda_vault_7.aleo/total_fees.get_or_use(USDA_TOKEN_ID,0u128);
             paid_fees.set(caller, current_fees);
         }
 
         stakes.set(caller, prev + amount);
-        let tot: u128 = total_staked.get_or_use(STAKE_TOKEN_ID, 0u128);
-        total_staked.set(STAKE_TOKEN_ID, tot + amount);
+        let tot: u128 = total_staked.get_or_use(ECLP_TOKEN_ID, 0u128);
+        total_staked.set(ECLP_TOKEN_ID, tot + amount);
     }
 
 
@@ -52,7 +63,7 @@ program eclipse_lending_treasury.aleo {
         public amount: u128,
         public caller: address
     ) -> Future {
-        let fut: Future = token_registry.aleo/transfer_public(STAKE_TOKEN_ID,caller,amount);
+        let fut: Future = token_registry.aleo/transfer_public(ECLP_TOKEN_ID,caller,amount);
         return finalize_withdraw(fut, amount, caller);
     }
 
@@ -69,10 +80,10 @@ program eclipse_lending_treasury.aleo {
         let new_stake: u128 = prev - amount;
         stakes.set(caller, new_stake);
 
-        let tot: u128 = total_staked.get_or_use(STAKE_TOKEN_ID, 0u128);
-        total_staked.set(STAKE_TOKEN_ID, tot - amount);
+        let tot: u128 = total_staked.get_or_use(ECLP_TOKEN_ID, 0u128);
+        total_staked.set(ECLP_TOKEN_ID, tot - amount);
 
-        let current_fees: u128 = eclipse_lending_usda_vault_6.aleo/total_fees.get_or_use(STAKE_TOKEN_ID,0u128);
+        let current_fees: u128 = eclipse_lending_usda_vault_7.aleo/total_fees.get_or_use(USDA_TOKEN_ID,0u128);
         paid_fees.set(caller, current_fees);
     }
 
@@ -91,7 +102,7 @@ program eclipse_lending_treasury.aleo {
 
         let payout: u128 = (delta * stake_amt) / total;
         assert(payout > 0u128);
-        let fut:Future = token_registry.aleo/transfer_public(STAKE_TOKEN_ID, self.caller, payout);
+        let fut:Future = credits.aleo/transfer_public(self.caller, payout as u64);
         return (finalize_claim(fut, stake_amt, total, last_paid, current_fees, self.caller));
     }
 
@@ -106,9 +117,9 @@ program eclipse_lending_treasury.aleo {
         fut.await();
 
         let s: u128 = stakes.get_or_use(caller, 0u128);
-        let tot: u128 = total_staked.get_or_use(STAKE_TOKEN_ID, 0u128);
+        let tot: u128 = total_staked.get_or_use(ECLP_TOKEN_ID, 0u128);
         let paid: u128 = paid_fees.get_or_use(caller, 0u128);
-        let fees: u128 = eclipse_lending_usda_vault_6.aleo/total_fees.get_or_use(STAKE_TOKEN_ID, 0u128);
+        let fees: u128 = eclipse_lending_usda_vault_7.aleo/total_fees.get_or_use(USDA_TOKEN_ID, 0u128);
 
         assert(s == stake_amt);
         assert(tot == total);

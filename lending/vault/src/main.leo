@@ -1,12 +1,22 @@
+////////////////////////////////////////////////////////////////////////////////
+// Eclipse Lending – Vault 
+//
+// Author : **Florent Gaujal** <https://github.com/floflo777>
+// Date   : 2025-05-30
+//
+// ### Purpose
+// Allow users to deposit collateral in the form of USDA, mint USDA tokens against it, and manage their positions.
+
+
 import token_registry.aleo;
 import eclipse_oracle_aggregate_2.aleo;
 import credits.aleo;
 
-program eclipse_lending_usda_vault_6.aleo {
+program eclipse_lending_usda_vault_7.aleo {
     const ADMIN: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const USDA_TOKEN_ID: field = 44556677889913field;
+    const USDA_TOKEN_ID: field = 44556677889914field;
     const PROVISION_FACTOR: u128 = 75u128;
-    const CONTRACT : address = eclipse_lending_usda_vault_6.aleo;   
+    const CONTRACT : address = eclipse_lending_usda_vault_7.aleo;   
     const USDA_FEED_ID: field = 2field;
     const LLTV : u128 = 85u128;
     const FEES: u64 = 1u64;
@@ -29,6 +39,7 @@ program eclipse_lending_usda_vault_6.aleo {
     mapping metas: u64 => PositionMeta;
     mapping next_id: field => u64;
     mapping total_fees: field => u128;
+    mapping total_collateral: field => u128;
 
     inline is_owner(caller: address) {
         assert(caller == ADMIN);
@@ -103,6 +114,8 @@ program eclipse_lending_usda_vault_6.aleo {
             max_debt: max_debt,
             t_last: block.height as u64
         });
+
+        total_collateral.set(USDA_TOKEN_ID, total_collateral.get_or_use(USDA_TOKEN_ID, 0u128) + coll_val);
     }
 
 
@@ -243,6 +256,7 @@ program eclipse_lending_usda_vault_6.aleo {
 
         let fees: u128 = (amt128 * price) / 100u128;
         total_fees.set(USDA_TOKEN_ID, total_fees.get_or_use(USDA_TOKEN_ID, 0u128) + fees);
+        total_collateral.set(USDA_TOKEN_ID, total_collateral.get_or_use(USDA_TOKEN_ID, 0u128) - (amt128 * price));
     }
 
 
@@ -326,6 +340,7 @@ program eclipse_lending_usda_vault_6.aleo {
         let stored: u128 = liquidation_collateral.get_or_use(id, 0u128);
         assert(amount as u128 == stored);
         liquidation_collateral.remove(id);
+        total_collateral.set(USDA_TOKEN_ID, total_collateral.get_or_use(USDA_TOKEN_ID, 0u128) - (amount as u128 * eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID)));
     }
 
 
@@ -333,19 +348,19 @@ program eclipse_lending_usda_vault_6.aleo {
     // 7 Récupération des frais
     // --------------------------------------------------------------------
     async transition claim_fees(
-        public amount: u128,
+        public amount: u64,
         private caller: address
     ) -> (Future) {
         assert(caller == ADMIN);
-        let fut: Future = token_registry.aleo/transfer_public(USDA_TOKEN_ID, TREASURY, amount);
+        let fut: Future = credits.aleo/transfer_public(TREASURY, amount);
         return (finalize_claim_fees(fut, amount));
     }
     async function finalize_claim_fees(
         fut: Future,
-        public amount: u128
+        public amount: u64
     ) {
         let amount_in_bank = total_fees.get_or_use(USDA_TOKEN_ID, 0u128);
-        assert(amount_in_bank == amount);
+        assert(amount_in_bank == amount as u128);
         fut.await();
         total_fees.set(USDA_TOKEN_ID, 0u128);
     }
