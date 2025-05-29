@@ -119,6 +119,7 @@ leo execute --program eclipse_oracle_token_2.aleo \
 leo execute --program eclipse_oracle_token_2.aleo \
            airdrop_initial <p0> … <p7> $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
+```
 
 ```sh
 # Grant mint role to staking & aggregate
