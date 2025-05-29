@@ -128,8 +128,10 @@ leo execute --program eclipse_oracle_token_2.aleo \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 ```
 
+
+### 3. Create a new feed
+
 ```sh
-# 3. Create a new feed
 leo execute --program eclipse_oracle_feed.aleo \
            create_feed <id>field <min_stake>u64 <spread>u64 <aggr_window>u32 <val_window>u32 $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
