@@ -28,12 +28,12 @@
 // - `provider_count ≤ MAX_PROVIDERS`.
 // - No duplicates in `provider_list`.
 // - `total_staked` equals the sum of non-zero `stakes`.
-//
+
 // ---------------------------------------------------------------------------
 //  External dependencies
 // ---------------------------------------------------------------------------
-import eclipse_oracle_feed.aleo;     // economic parameters & pause flag
-import token_registry.aleo;         // public <--> private ALEO token moves
+import eclipse_oracle_feed.aleo;     
+import token_registry.aleo;         
 
 program eclipse_oracle_staking_2.aleo {
 
@@ -41,9 +41,9 @@ program eclipse_oracle_staking_2.aleo {
     //  Constants
     // --------------------------------------------------------------------
     const MAX_PROVIDERS: u32 = 8u32;                // Hard cap per feed
-    const token_id: field   = 123456789101field;    // ALEO Token identifier
+    const TOKEN_ID: field = 123456789101field;    // reward token ID
 
-    // Mirror of the immutable config stored in the Feed registry.
+    // Feed config
     struct FeedConfig {
         creator: address,
         min_stake: u64,
@@ -56,10 +56,10 @@ program eclipse_oracle_staking_2.aleo {
     // --------------------------------------------------------------------
     //  Persistent storage
     // --------------------------------------------------------------------
-    mapping total_staked:   field => u128;   /// Σ stakes for a given feed
-    mapping stakes:         field => u128;   /// Individual stake per provider
-    mapping provider_count: field => u32;    /// Number of active providers
-    mapping provider_list:  field => address;/// Compact array of providers
+    mapping total_staked: field => u128;   // Σ stakes for a given feed
+    mapping stakes: field => u128;   // Individual stake per provider
+    mapping provider_count: field => u32;    // Number of active providers
+    mapping provider_list:  field => address;// Compact array of providers
 
     // ====================================================================
     // 1. Stake
@@ -73,33 +73,30 @@ program eclipse_oracle_staking_2.aleo {
     //
     async transition stake(
         public feed_id: field,
-        public amount:  u128,
-        public caller:  address
+        public amount: u128,
+        public caller: address
     ) -> Future {
-
-        // Move tokens under this contract’s control (async call).
-        let (rec, f): (token_registry.aleo/Token, Future) =
-            token_registry.aleo/transfer_public_to_private(
-                token_id,
-                caller,
-                amount,
-                false              // non-extractable note
+        let fut: Future =
+            token_registry.aleo/transfer_public_as_signer(
+                TOKEN_ID,
+                eclipse_oracle_staking_2.aleo,
+                amount              
             );
-        return finalize_stake(f, feed_id, amount, caller);
+        return finalize_stake(fut, feed_id, amount, caller);
     }
 
     /// Continuation after the async transfer settles.
     async function finalize_stake(
-        f: Future,
+        fut: Future,
         public feed_id: field,
         public amount:  u128,
         public caller:  address
     ) {
-        f.await();                                            // ensure funds moved
+        fut.await();                                         
 
         let cfg: FeedConfig = eclipse_oracle_feed.aleo/feeds.get(feed_id);
-        assert(!cfg.paused);                                  // honour emergency stop
-        assert(amount > 0u128);                               // non-zero stake
+        assert(!cfg.paused);                                 
+        assert(amount > 0u128);                               
 
         // Composite key: feed_id || provider address
         let key: field = feed_id + (caller as field);
@@ -147,32 +144,31 @@ program eclipse_oracle_staking_2.aleo {
     //
     async transition withdraw(
         public feed_id: field,
-        public amount:  u128,
-        public caller:  address
+        public amount: u128,
+        public caller: address
     ) -> Future {
-        // Immediately mint the public token (escrow until finalize).
-        let f: Future = token_registry.aleo/transfer_public(
-            token_id,
+        let fut: Future = token_registry.aleo/transfer_public(
+            TOKEN_ID,
             caller,
             amount
         );
-        return finalize_withdraw(f, feed_id, amount, caller);
+        return finalize_withdraw(fut, feed_id, amount, caller);
     }
 
     async function finalize_withdraw(
-        f: Future,
+        fut: Future,
         public feed_id: field,
-        public amount:  u128,
-        public caller:  address
+        public amount: u128,
+        public caller: address
     ) {
-        f.await();                                            // funds released
+        fut.await();                                           
         let cfg: FeedConfig = eclipse_oracle_feed.aleo/feeds.get(feed_id);
         assert(!cfg.paused);
         assert(amount > 0u128);
 
         let key: field = feed_id + (caller as field);
         let prev: u128 = stakes.get(key);
-        assert(prev >= amount);                               // cannot overdraft
+        assert(prev >= amount);                              
 
         let new_stake: u128 = prev - amount;
         // If still active, enforce min_stake
@@ -180,7 +176,6 @@ program eclipse_oracle_staking_2.aleo {
 
         stakes.set(key, new_stake);
 
-        // Adjust global total
         let prev_total: u128 = total_staked.get_or_use(feed_id, 0u128);
         total_staked.set(feed_id, prev_total - amount);
     }
@@ -214,7 +209,6 @@ program eclipse_oracle_staking_2.aleo {
         let prev_total: u128 = total_staked.get_or_use(feed_id, 0u128);
         total_staked.set(feed_id, prev_total - provider_stake);
 
-        // Remove from provider list (lazy delete: mark slot with dummy addr)
         let count: u32 = provider_count.get_or_use(feed_id, 0u32);
         assert(count > 0u32);
         provider_count.set(feed_id, count - 1u32);
@@ -223,7 +217,7 @@ program eclipse_oracle_staking_2.aleo {
         let slot_last: field = feed_id + (last_idx as field);
         provider_list.set(
             slot_last,
-            aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv // sentinel
+            aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv // to be replaced by aleo zero address (couldn't find it anywhere...)
         );
     }
 
@@ -277,9 +271,6 @@ program eclipse_oracle_staking_2.aleo {
         // ------------------------------------------------------------
         // Case 2: list full → find & replace the min-stake provider
         // ------------------------------------------------------------
-        //
-        // NOTE: Unrolled comparison tree for deterministic O(1) gas.
-        //
         let key0: field = feed_id + (0u32 as field); let p0: address = provider_list.get(key0);
         let key1: field = feed_id + (1u32 as field); let p1: address = provider_list.get(key1);
         let key2: field = feed_id + (2u32 as field); let p2: address = provider_list.get(key2);

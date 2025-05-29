@@ -32,7 +32,6 @@
 // ### Invariants
 // - Only a provider with ≥ `min_stake` may propose or finalize.
 // - A proposal is unique per feed until `aggregate_done` flips true.
-// - Slashing is allowed **once** per proposal.
 // - `latest_price` is updated only by a validated (non-slashed) proposal.
 //
 import eclipse_oracle_feed.aleo;
@@ -42,15 +41,14 @@ import token_registry.aleo;
 
 program eclipse_oracle_aggregate_2.aleo {
 
-    // --------------------------------------------------------------------
+    // ====================================================================
     //  Constants
-    // --------------------------------------------------------------------
-    const MAX_PROVIDERS:     u32   = 8u32;
-    const MIN_PROVIDERS:     u32   = 6u32;            // quorum for validation
-    const aggregator_reward: u128 = 1u128;            // mint for proposer
-    const token_id:          field = 123456789101field;
+    // ====================================================================
+    const MIN_PROVIDERS: u32 = 6u32;            // quorum for validation
+    const AGGREGATOR_REWARD: u128 = 1u128;      // mint reward for proposer
+    const TOKEN_ID: field = 123456789101field;
 
-    // Feed config mirror
+    // Feed config
     struct FeedConfig {
         creator: address,
         min_stake: u64,
@@ -60,39 +58,41 @@ program eclipse_oracle_aggregate_2.aleo {
         paused: bool
     }
 
-    // --------------------------------------------------------------------
+    // ====================================================================
     //  Persistent storage
-    // --------------------------------------------------------------------
-    mapping latest_price:      field => u128;
-    mapping proposal_median:   field => u128;
+    // ====================================================================
+    mapping latest_price: field => u128;
+    mapping proposal_median: field => u128;
     mapping proposal_proposer: field => address;
-    mapping proposal_block:    field => u32;
-    mapping proposal_slashed:  field => bool;
-    mapping aggregate_done:    field => bool;
-    mapping slasher:           field => address;
-    mapping slasher_reward:    field => u128;
+    mapping proposal_block: field => u32;
+    mapping proposal_slashed: field => bool;
+    mapping aggregate_done:  field => bool;
+    mapping slasher: field => address;
+    mapping slasher_reward: field => u128;
     mapping last_propose_block:field => u32;
 
     // ====================================================================
     // 1. Propose a median
     // ====================================================================
-    //
+    
     async transition propose(
         public feed_id: field,
-        public median:  u128,
-        public caller:  address
+        public median: u128,
+        public caller: address
     ) -> Future {
         return finalize_propose(feed_id, median, caller);
     }
 
     async function finalize_propose(
         public feed_id: field,
-        public median:  u128,
-        public caller:  address
+        public median: u128,
+        public caller: address
     ) {
-        // Require sufficient active providers
+        // Need to have at least MIN_PROVIDERS to propose a price
         let count: u32 = eclipse_oracle_staking_2.aleo/provider_count.get_or_use(feed_id, 0u32);
         assert(count >= MIN_PROVIDERS);
+
+        assert(!aggregate_done.get_or_use(feed_id, false));
 
         let cfg: FeedConfig = eclipse_oracle_feed.aleo/feeds.get(feed_id);
         assert(!cfg.paused);
@@ -200,9 +200,7 @@ program eclipse_oracle_aggregate_2.aleo {
         let diff7: u128 = (price7 >= median) ? (price7 - median) : (median - price7);
         let cond7: u32 = (7u32 < count && diff7 <= threshold) ? 1u32 : 0u32;
 
-        let valid_sum: u32 =
-            cond0 + cond1 + cond2 + cond3 +
-            cond4 + cond5 + cond6 + cond7;
+        let valid_sum: u32 = cond0 + cond1 + cond2 + cond3 + cond4 + cond5 + cond6 + cond7;
 
         // Slash if quorum of “good” providers not met
         if valid_sum < MIN_PROVIDERS {
@@ -222,12 +220,12 @@ program eclipse_oracle_aggregate_2.aleo {
     // ====================================================================
     async transition finalize_aggregate(
         public feed_id: field,
-        public caller:  address
+        public caller: address
     ) -> Future {
         let f_reward: Future = token_registry.aleo/mint_public(
-            token_id,
+            TOKEN_ID,
             caller,
-            aggregator_reward,
+            AGGREGATOR_REWARD,
             0u32
         );
         return finalize_aggregate_internal(f_reward, feed_id, caller);
@@ -236,7 +234,7 @@ program eclipse_oracle_aggregate_2.aleo {
     async function finalize_aggregate_internal(
         f_reward: Future,
         public feed_id: field,
-        public caller:  address
+        public caller: address
     ) {
         assert(!aggregate_done.get_or_use(feed_id, false));
 
@@ -266,12 +264,12 @@ program eclipse_oracle_aggregate_2.aleo {
     // 4. Claim slasher reward
     // ====================================================================
     async transition claim_slash(
-        public feed_id:      field,
+        public feed_id: field,
         public slasher_input:address,
         public amount_input: u128
     ) -> Future {
         let f: Future = token_registry.aleo/mint_public(
-            token_id,
+            TOKEN_ID,
             slasher_input,
             amount_input,
             0u32
@@ -281,7 +279,7 @@ program eclipse_oracle_aggregate_2.aleo {
 
     async function finalize_claim_slash(
         f: Future,
-        public feed_id:      field,
+        public feed_id: field,
         public slasher_input:address,
         public amount_input: u128
     ) {
@@ -294,8 +292,7 @@ program eclipse_oracle_aggregate_2.aleo {
         f.await();                               // mint reward
         // Reset state
         slasher_reward.set(feed_id, 0u128);
-        slasher.set(feed_id,
-            aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv);
+        slasher.set(feed_id,aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv);
     }
 
     // ====================================================================
@@ -305,8 +302,7 @@ program eclipse_oracle_aggregate_2.aleo {
         public feed_id: field,
         public provider: address
     ) -> Future {
-        let f_slash: Future =
-            eclipse_oracle_staking_2.aleo/slash(feed_id, provider);
+        let f_slash: Future = eclipse_oracle_staking_2.aleo/slash(feed_id, provider);
         return finalize_slash_provider(f_slash, feed_id, provider);
     }
 
@@ -320,9 +316,8 @@ program eclipse_oracle_aggregate_2.aleo {
 
         // Compare provider’s last price vs current proposal median
         let median: u128 = proposal_median.get(feed_id);
-        let price:  u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(
-            feed_id + (provider as field), 0u128);
-        let diff:   u128 = (price >= median) ? (price - median) : (median - price);
+        let price: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (provider as field), 0u128);
+        let diff: u128 = (price >= median) ? (price - median) : (median - price);
         assert(diff > (cfg.slashing_threshold as u128));  // only major outliers
 
         f_slash.await();      // burn stake

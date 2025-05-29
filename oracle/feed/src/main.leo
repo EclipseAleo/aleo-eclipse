@@ -21,15 +21,15 @@
 program eclipse_oracle_feed.aleo {
     /// Immutable (except `paused`) configuration of a single feed.
     struct FeedConfig {
-        creator: address,          /// Account that created the feed
-        min_stake: u64,            /// Minimum stake required per provider
-        slashing_threshold: u64,   /// Max price deviation tolerated
-        aggregation_window: u32,   /// Blocks between two valid submissions
-        challenge_window: u32,     /// Time left to slash an aggregator
-        paused: bool               /// Emergency stop flag
+        creator: address,          // Account that created the feed
+        min_stake: u64,            // Minimum stake required per provider
+        slashing_threshold: u64,   // Max price deviation tolerated
+        aggregation_window: u32,   // Blocks between two valid submissions
+        challenge_window: u32,     // Time left to slash an aggregator
+        paused: bool               // Emergency stop flag
     }
 
-    mapping feeds: field => FeedConfig;   /// Registry of all feeds
+    mapping feeds: field => FeedConfig;   // Registry of all feeds
 
     // =====================================================================
     // 1. Create a new feed
