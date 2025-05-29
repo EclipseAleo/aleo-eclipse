@@ -88,7 +88,7 @@ Eclipse Oracle is a decentralized oracle designed for **Aleo**. It lets an arbit
 ### Prerequisites
 
 - **Aleo account** with sufficient testnet credits  
-- LEO ≥ 2.5.0 & snarkOS ≥ 2.0.0-testnet5  
+- LEO ≥ 2.5.0  
 - Environment variables:
   ```sh
   export NETWORK=testnet
@@ -96,49 +96,59 @@ Eclipse Oracle is a decentralized oracle designed for **Aleo**. It lets an arbit
   export PK_CREATOR=<private_key_creator>
   export ADDR_CREATOR=<aleo_addr_creator>
   export TOKEN_ID=123456789101field
-1. Deploy all contracts
-# Run inside each contract directory (feed, staking, submit, aggregate, token)
+
+### 1. Deploy all contracts
+
+#### Run inside each contract directory (feed, staking, submit, aggregate, token)
 leo deploy --network $NETWORK --private-key "$PK_CREATOR"
-2. Initialize token & allocate genesis balances
-# Register token
+
+### 2. Initialize token & allocate genesis balances
+
+#### Register token
 leo execute --program eclipse_oracle_token_2.aleo \
            initialize $ADDR_CREATOR <start_block>u32 \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 
-# Airdrop to first 8 providers
+#### Airdrop to first 8 providers
 leo execute --program eclipse_oracle_token_2.aleo \
            airdrop_initial <p0> … <p7> $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 
-# Grant mint role to staking & aggregate
+#### Grant mint role to staking & aggregate
 leo execute --program eclipse_oracle_token_2.aleo \
            grant_role $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
-3. Create a new feed
+
+### 3. Create a new feed
 leo execute --program eclipse_oracle_feed.aleo \
            create_feed <id>field <min_stake>u64 <spread>u64 <aggr_window>u32 <val_window>u32 $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
-4. Provider actions
-# Stake tokens
+
+### 4. Provider actions
+
+#### Stake tokens
 leo execute --program eclipse_oracle_staking_2.aleo \
            stake <id>field 10000000000u128 $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 
-# Submit price
+#### Submit price
 leo execute --program eclipse_oracle_submit_2.aleo \
            submit_price <id>field 235400000000000000u128 $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 
-# Propose median
+#### Propose median
 leo execute --program eclipse_oracle_aggregate_2.aleo \
            propose <id>field 235400000000000000u128 $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
 
-# Finalize after challenge period
+#### Finalize after challenge period
 leo execute --program eclipse_oracle_aggregate_2.aleo \
            finalize_aggregate <id>field $ADDR_PROVIDER \
            --private-key "$PK_PROVIDER" --broadcast --endpoint $ENDPOINT
-✍️ Credits
+
+--- 
+
+## ✍️ Credits
 
 Developed with ❤️ by Florent Gaujal
 https://github.com/floflo777
