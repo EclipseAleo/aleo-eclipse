@@ -8,7 +8,7 @@
 // Enables **data providers** to push *individual* price observations for a
 // specific feed.  Each valid submission:
 // - must respect the `aggregation_window` (per-provider cooldown),
-// - earns a small fixed reward (`submit_reward`, minted on demand),
+// - earns a small fixed reward (`SUBMIT_REWARD`, minted on demand),
 // - is stored temporarily until the next aggregation cycle.
 //
 // ### Storage
@@ -30,7 +30,7 @@ import token_registry.aleo;
 
 program eclipse_oracle_submit_2.aleo {
 
-    // Feed config mirror
+    // Feed config
     struct FeedConfig {
         creator: address,
         min_stake: u64,
@@ -40,15 +40,15 @@ program eclipse_oracle_submit_2.aleo {
         paused: bool
     }
 
-    const submit_reward: u16  = 1u16;                    // reward per submit
-    const token_id:     field = 123456789101field;       // reward token
+    const SUBMIT_REWARD: u16  = 1u16;                    // reward per submit
+    const TOKEN_ID: field = 123456789101field;       // reward token
 
     // --------------------------------------------------------------------
     //  Persistent storage
     // --------------------------------------------------------------------
-    mapping temp_price:             field   => u128;    /// last submitted price
-    mapping last_ts:                field   => u64;     /// block timestamp
-    mapping provider_pending_reward: address => u16;     /// unclaimed rewards
+    mapping temp_price: field => u128;    // last submitted price
+    mapping last_ts: field => u64;     // block timestamp
+    mapping provider_pending_reward: address => u16;    // unclaimed rewards
 
     // ====================================================================
     // 1. Submit a price
@@ -58,16 +58,16 @@ program eclipse_oracle_submit_2.aleo {
     //
     async transition submit_price(
         public feed_id: field,
-        public price:   u128,
-        public caller:  address
+        public price: u128,
+        public caller: address
     ) -> Future {
         return finalize_submit(feed_id, price, caller);
     }
 
     async function finalize_submit(
         public feed_id: field,
-        public price:   u128,
-        public caller:  address
+        public price: u128,
+        public caller: address
     ) {
         let cfg: FeedConfig = eclipse_oracle_feed.aleo/feeds.get(feed_id);
         assert(!cfg.paused);
@@ -80,7 +80,7 @@ program eclipse_oracle_submit_2.aleo {
         // Enforce per-provider cooldown
         let now:  u64 = block.height as u64;
         let prev: u64 = last_ts.get_or_use(key, 0u64);
-        assert(now > prev);          // monotonically increasing
+        assert(now > prev); 
         if (prev != 0u64) {
             let delta: u64 = now - prev;
             assert(delta <= (cfg.aggregation_window as u64));
@@ -92,9 +92,9 @@ program eclipse_oracle_submit_2.aleo {
         last_ts.set(key, now);
         temp_price.set(key, price);
 
-        // Credit reward (lazy mint)
+        // Credit reward
         let pending: u16 = provider_pending_reward.get_or_use(caller, 0u16);
-        provider_pending_reward.set(caller, pending + submit_reward);
+        provider_pending_reward.set(caller, pending + SUBMIT_REWARD);
     }
 
     // ====================================================================
@@ -107,10 +107,10 @@ program eclipse_oracle_submit_2.aleo {
         public caller: address,
         public reward: u16
     ) -> Future {
-        assert(caller == self.caller);   // protection against frontrun
+        assert(caller == self.caller);
 
         let f_reward: Future = token_registry.aleo/mint_public(
-            token_id,
+            TOKEN_ID,
             caller,
             reward as u128,
             0u32
@@ -125,8 +125,8 @@ program eclipse_oracle_submit_2.aleo {
     ) {
         let pending: u16 = provider_pending_reward.get_or_use(caller, 0u16);
         assert(pending > 0u16);
-        assert(pending == reward);            // consistency check
+        assert(pending == reward);           
         provider_pending_reward.set(caller, 0u16);
-        f_reward.await();                     // wait for mint
+        f_reward.await();                   
     }
 }
