@@ -35,13 +35,13 @@
 import eclipse_oracle_feed.aleo;     
 import token_registry.aleo;         
 
-program eclipse_oracle_staking_2.aleo {
+program eclipse_oracle_staking_3.aleo {
 
     // --------------------------------------------------------------------
     //  Constants
     // --------------------------------------------------------------------
     const MAX_PROVIDERS: u32 = 8u32;                // Hard cap per feed
-    const TOKEN_ID: field = 123456789101field;    // reward token ID
+    const TOKEN_ID: field = 1234567898field;    // reward token ID
 
     // Feed config
     struct FeedConfig {
@@ -79,7 +79,7 @@ program eclipse_oracle_staking_2.aleo {
         let fut: Future =
             token_registry.aleo/transfer_public_as_signer(
                 TOKEN_ID,
-                eclipse_oracle_staking_2.aleo,
+                eclipse_oracle_staking_3.aleo,
                 amount              
             );
         return finalize_stake(fut, feed_id, amount, caller);
@@ -191,7 +191,7 @@ program eclipse_oracle_staking_2.aleo {
         public feed_id: field,
         public provider: address
     ) -> Future {
-        assert(self.caller == eclipse_oracle_aggregate_2.aleo);
+        assert(self.caller == eclipse_oracle_aggregate_3.aleo);
         return finalize_slash(feed_id, provider);
     }
 
