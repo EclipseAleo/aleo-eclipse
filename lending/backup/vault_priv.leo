@@ -1,5 +1,5 @@
 import token_registry.aleo;
-import eclipse_oracle_aggregate_2.aleo;
+import eclipse_oracle_aggregate_4.aleo;
 import proof_open.aleo;
 import proof_liquidate.aleo;
 
@@ -113,7 +113,7 @@ program eclipse_lending_usda_vault.aleo {
         priv_commit.set(id, commitment);
 
         let cfg: CollateralParam = allowed.get(tokenId);
-        let price:   u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+        let price:   u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
         let coll_val: u128 = amount * price;
         let price_liq:    u128 = coll_val * cfg.lltv / 100u128;
         let max_debt_cap: u128 = coll_val * PROVISION_FACTOR / 100u128;

@@ -36,7 +36,7 @@ Eclipse Lending is a decentralized overcollateralized **USDA stablecoin vault** 
 | **Vault**    | `eclipse_lending_usda_vault_7.aleo` | Collateral deposit, USDA minting, burning, liquidation |
 | **Treasury** | `eclipse_lending_treasury.aleo`     | Stake ECLP tokens, receive and claim share of fees     |
 | **Token**    | `token_registry.aleo`               | USDA & ECLP token definitions and transfers            |
-| **Oracle**   | `eclipse_oracle_aggregate_2.aleo`   | Latest price feed required for minting and liquidation |
+| **Oracle**   | `eclipse_oracle_aggregate_4.aleo`   | Latest price feed required for minting and liquidation |
 | **Credits**  | `credits.aleo`                      | Transfer & handle Aleo native currency                 |
 
 ### Contract summaries
@@ -104,7 +104,7 @@ leo execute --program eclipse_lending_usda_vault_7.aleo \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 ```
 
-### 3. Treasury – Stake and claim
+### 3. Treasury – Stake and claim (ECLP token, not USDA)
 
 ```sh
 # Stake ECLP tokens

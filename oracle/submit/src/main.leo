@@ -25,10 +25,10 @@
 // - `reward` tokens are minted only when claimed (`claim_pending_reward`).
 //
 import eclipse_oracle_feed.aleo;
-import eclipse_oracle_staking_2.aleo;
+import eclipse_oracle_staking_4.aleo;
 import token_registry.aleo;
 
-program eclipse_oracle_submit_2.aleo {
+program eclipse_oracle_submit_4.aleo {
 
     // Feed config
     struct FeedConfig {
@@ -74,7 +74,7 @@ program eclipse_oracle_submit_2.aleo {
 
         // Provider must be staked
         let key: field  = feed_id + (caller as field);
-        let stake: u128 = eclipse_oracle_staking_2.aleo/stakes.get_or_use(key, 0u128);
+        let stake: u128 = eclipse_oracle_staking_4.aleo/stakes.get_or_use(key, 0u128);
         assert(stake > 0u128);
 
         // Enforce per-provider cooldown

@@ -9,12 +9,12 @@
 
 
 import token_registry.aleo;
-import eclipse_lending_usda_vault_11.aleo;
+import eclipse_lending_usda_vault_12.aleo;
 
 program eclipse_lending_treasury.aleo {
 
     const ADMIN: address  = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const ECLP_TOKEN_ID: field = 123field;
+    const ECLP_TOKEN_ID: field = 1234567898field;
     const USDA_TOKEN_ID: field = 44556677889917field;
 
     mapping total_staked: field => u128;
@@ -139,7 +139,4 @@ program eclipse_lending_treasury.aleo {
         assert_eq(total_staked.get_or_use(ECLP_TOKEN_ID, 0u128), tot_staked);
         
     }
-
-
-
 }

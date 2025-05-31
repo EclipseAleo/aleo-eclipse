@@ -2,7 +2,7 @@
 // USDA Vault – dépôt de collatéraux, emprunts, et liquidation à 105%
 
 import token_registry.aleo;
-import eclipse_oracle_aggregate_2.aleo;
+import eclipse_oracle_aggregate_4.aleo;
 
 program eclipse_lending_usda_vault.aleo {
     // --------------------------------------------------------------------
@@ -182,7 +182,7 @@ program eclipse_lending_usda_vault.aleo {
         let idx: u128 = debt_index.get_or_use(USDA_TOKEN_ID, 1_000_000_000_000_000_000u128);
         let debt: u128 = debt_before * idx / 1_000_000_000_000_000_000u128;
         if (debt > 0u128) {
-            let price: u128  = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+            let price: u128  = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
             let remain: u128 = prev - amount;
             let coll_val:u128= remain * price;
             assert(coll_val * 100u128 >= debt * cfg.ltv_min);
@@ -220,7 +220,7 @@ program eclipse_lending_usda_vault.aleo {
         let key: field = token_id + (caller as field);
         let coll_amt: u128 = collateral.get_or_use(key, 0u128);
         assert(coll_amt > 0u128);
-        let price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+        let price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
         let coll_val: u128 = coll_amt * price;
         // Accrual de la dette
         let last_blk: u64 = last_debt_accrual.get_or_use(USDA_TOKEN_ID, 0u64);
@@ -335,7 +335,7 @@ program eclipse_lending_usda_vault.aleo {
         // Vérifie la config et le prix
         let cfg: CollateralParam = allowed.get(token_id);
         assert(!cfg.paused);
-        let price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+        let price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
 
         // Liquidation health check
         let coll_val: u128 = stored_coll * price;
@@ -424,7 +424,7 @@ program eclipse_lending_usda_vault.aleo {
         let idx: u128 = debt_index.get_or_use(USDA_TOKEN_ID, 1_000_000_000_000_000_000u128);
         let debt: u128 = debt_before * idx / 1_000_000_000_000_000_000u128;
         if (debt > 0u128) {
-            let price: u128  = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+            let price: u128  = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
             let remain: u128 = prev - amount;
             let coll_val:u128= remain * price;
             assert(coll_val * 100u128 >= debt * cfg.ltv_min);
@@ -487,7 +487,7 @@ program eclipse_lending_usda_vault.aleo {
         let new_debt: u128   = owed + usda_out;
 
         // 3) Check de santé puis mise à jour de la dette
-        let price: u128   = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+        let price: u128   = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
         let coll_val:u128 = coll_amt * price;
         assert(coll_val * 100u128 >= new_debt * cfg.ltv_min);
 

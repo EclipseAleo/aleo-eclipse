@@ -35,7 +35,7 @@
 import eclipse_oracle_feed.aleo;     
 import token_registry.aleo;         
 
-program eclipse_oracle_staking_2.aleo {
+program eclipse_oracle_staking_4.aleo {
 
     // --------------------------------------------------------------------
     //  Constants
@@ -79,7 +79,7 @@ program eclipse_oracle_staking_2.aleo {
         let fut: Future =
             token_registry.aleo/transfer_public_as_signer(
                 TOKEN_ID,
-                eclipse_oracle_staking_2.aleo,
+                eclipse_oracle_staking_4.aleo,
                 amount              
             );
         return finalize_stake(fut, feed_id, amount, caller);
@@ -185,13 +185,13 @@ program eclipse_oracle_staking_2.aleo {
     // ====================================================================
     //
     // Burns an entire provider’s stake as punishment.  Only
-    // `eclipse_oracle_aggregate_2.aleo` can invoke this entry point.
+    // `eclipse_oracle_aggregate_4.aleo` can invoke this entry point.
     //
     async transition slash(
         public feed_id: field,
         public provider: address
     ) -> Future {
-        assert(self.caller == eclipse_oracle_aggregate_2.aleo);
+        assert(self.caller == eclipse_oracle_aggregate_4.aleo);
         return finalize_slash(feed_id, provider);
     }
 
