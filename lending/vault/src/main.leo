@@ -9,14 +9,14 @@
 
 
 import token_registry.aleo;
-import eclipse_oracle_aggregate_4.aleo;
+import eclipse_oracle_aggregate_2.aleo;
 import credits.aleo;
 
-program eclipse_lending_usda_vault_9.aleo {
+program eclipse_lending_usda_vault_11.aleo {
     const ADMIN: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const USDA_TOKEN_ID: field = 44556677889915field;
+    const USDA_TOKEN_ID: field = 44556677889917field;
     const PROVISION_FACTOR: u128 = 75u128;
-    const CONTRACT : address = eclipse_lending_usda_vault_2.aleo;   
+    const CONTRACT : address = eclipse_lending_usda_vault_11.aleo;   
     const USDA_FEED_ID: field = 2field;
     const LLTV : u128 = 85u128;
     const FEES: u64 = 1u64;
@@ -39,6 +39,7 @@ program eclipse_lending_usda_vault_9.aleo {
     mapping metas: u64 => PositionMeta;
     mapping next_id: field => u64;
     mapping total_fees: field => u128;
+    mapping cumulated_fees: field => u128;
     mapping total_collateral: field => u128;
 
     inline is_owner(caller: address) {
@@ -98,7 +99,7 @@ program eclipse_lending_usda_vault_9.aleo {
         assert(pos_id == current + 1u64);
         next_id.set(USDA_TOKEN_ID, current+1u64);
 
-        let oracle_price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(USDA_FEED_ID);
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
         assert(price == oracle_price);
 
         fut.await();
@@ -141,8 +142,8 @@ program eclipse_lending_usda_vault_9.aleo {
         assert(out > 0u128);
         assert(price > 0u128);
         assert(liquidated_ids.get_or_use(pos_id, false) == false);
-
-        let oracle_price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(USDA_FEED_ID);
+        
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
         assert(price == oracle_price);
 
         fut_mint.await();
@@ -186,7 +187,7 @@ program eclipse_lending_usda_vault_9.aleo {
         assert(price > 0u128);
         assert(liquidated_ids.get_or_use(pos_id, false) == false);
 
-        let oracle_price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(USDA_FEED_ID);
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
         assert(price == oracle_price);
 
         fut_burn.await();
@@ -229,7 +230,7 @@ program eclipse_lending_usda_vault_9.aleo {
         public price: u128,
         public amount: u64
    ) {
-        let oracle_price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(USDA_FEED_ID);
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
         assert(price == oracle_price);
 
         fut.await();
@@ -256,6 +257,7 @@ program eclipse_lending_usda_vault_9.aleo {
 
         let fees: u128 = (amount as u128) * (FEES as u128) / 100u128;
         total_fees.set(USDA_TOKEN_ID, total_fees.get_or_use(USDA_TOKEN_ID, 0u128) + fees);
+        cumulated_fees.set(USDA_TOKEN_ID, cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128) + fees);
         total_collateral.set(USDA_TOKEN_ID, total_collateral.get_or_use(USDA_TOKEN_ID, 0u128) - (amt128 * price));
     }
 
@@ -286,7 +288,7 @@ program eclipse_lending_usda_vault_9.aleo {
     ) {
         fut_burn.await();
 
-        let oracle_price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(USDA_FEED_ID);
+        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID);
         assert(price == oracle_price);
 
         let meta: PositionMeta = metas.get(id);
@@ -340,7 +342,7 @@ program eclipse_lending_usda_vault_9.aleo {
         let stored: u128 = liquidation_collateral.get_or_use(id, 0u128);
         assert(amount as u128 == stored);
         liquidation_collateral.remove(id);
-        total_collateral.set(USDA_TOKEN_ID, total_collateral.get_or_use(USDA_TOKEN_ID, 0u128) - (amount as u128 * eclipse_oracle_aggregate_4.aleo/latest_price.get(USDA_FEED_ID)));
+        total_collateral.set(USDA_TOKEN_ID, total_collateral.get_or_use(USDA_TOKEN_ID, 0u128) - (amount as u128 * eclipse_oracle_aggregate_2.aleo/latest_price.get(USDA_FEED_ID)));
     }
 
 
