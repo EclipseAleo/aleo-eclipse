@@ -9,61 +9,50 @@
 
 
 import token_registry.aleo;
-import eclipse_lending_usda_vault_9.aleo;
+import eclipse_lending_usda_vault_7.aleo;
 
 program eclipse_lending_treasury.aleo {
 
     const ADMIN: address  = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const ECLP_TOKEN_ID: field = 123field;
     const USDA_TOKEN_ID: field = 44556677889915field;
+    const ECLP_TOKEN_ID: field = 123field;
 
+    mapping stakes: address => u128;
     mapping total_staked: field => u128;
+    mapping paid_fees: address => u128;
 
     inline is_admin(caller: address) {
         assert(caller == ADMIN);
-    }
-
-    record stake_position {
-        owner: address,
-        amount: u128,
-        height: u32,
-        total_fees: u128
     }
 
     // ----------------------------------------
     // 1. Stake tokens
     // ----------------------------------------
     async transition stake(
-        private amount: u128,
-        private caller: address,
-        private token_input: token_registry.aleo/Token,
-        public fees_tot: u128,
-        public actual_block: u32
-    ) -> (token_registry.aleo/Token, stake_position, Future) {
-        let (token, fut):(token_registry.aleo/Token, Future) = token_registry.aleo/transfer_private_to_public(treasury.aleo, amount, token_input);
-        let stake_pos: stake_position = stake_position {
-            owner: caller,
-            amount: amount,
-            height: actual_block,
-            total_fees: fees_tot
-        };
-        assert(token_input.amount >= amount);
-        return (token, stake_pos, finalize_stake(fut, amount, caller, fees_tot, actual_block));
+        public amount: u128,
+        public caller: address
+    ) -> Future {
+        let fut: Future = token_registry.aleo/transfer_public_as_signer(ECLP_TOKEN_ID,treasury.aleo,amount);
+        return finalize_stake(fut, amount, caller);
     }
 
     async function finalize_stake(
         public fut: Future,
         public amount: u128,
-        public caller: address,
-        public fees_tot: u128,
-        public actual_block: u32
+        public caller: address
     ) {
         fut.await();
-        let tot_fees:u128=eclipse_lending_usda_vault_9.aleo/total_fees.get_or_use(USDA_TOKEN_ID, 0u128);
-        assert_eq(tot_fees, fees_tot);
         assert(amount > 0u128);
-        assert_eq(actual_block, block.height);
-        total_staked.set(ECLP_TOKEN_ID, total_staked.get_or_use(ECLP_TOKEN_ID, 0u128) + amount);
+
+        let prev: u128 = stakes.get_or_use(caller, 0u128);
+        if (prev == 0u128) {
+            let current_fees: u128 = eclipse_lending_usda_vault_7.aleo/total_fees.get_or_use(USDA_TOKEN_ID,0u128);
+            paid_fees.set(caller, current_fees);
+        }
+
+        stakes.set(caller, prev + amount);
+        let tot: u128 = total_staked.get_or_use(ECLP_TOKEN_ID, 0u128);
+        total_staked.set(ECLP_TOKEN_ID, tot + amount);
     }
 
 
@@ -71,13 +60,10 @@ program eclipse_lending_treasury.aleo {
     // 2. Withdraw tokens
     // ----------------------------------------
     async transition withdraw(
-        private amount: u128,
-        private caller: address,
-        private stake_pos: stake_position,
-        public actual_block: u32,
-        public fees_tot: u128
-    ) -> (token_registry.aleo/Token, Future) {
-        let (token, fut): (token_registry.aleo/Token, Future) = token_registry.aleo/transfer_public_to_private(ECLP_TOKEN_ID,caller,amount, false);
+        public amount: u128,
+        public caller: address
+    ) -> Future {
+        let fut: Future = token_registry.aleo/transfer_public(ECLP_TOKEN_ID,caller,amount);
         return finalize_withdraw(fut, amount, caller);
     }
 
@@ -102,7 +88,6 @@ program eclipse_lending_treasury.aleo {
     }
 
 
-    /*
     // ----------------------------------------
     // 3. Claim fees
     // ----------------------------------------
@@ -141,6 +126,6 @@ program eclipse_lending_treasury.aleo {
         assert(paid == last_paid);
         assert(fees == current_fees);
         paid_fees.set(caller, current_fees);
-    }*/
+    }
 
 }

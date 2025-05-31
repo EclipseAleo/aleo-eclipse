@@ -28,14 +28,14 @@
 //
 import token_registry.aleo;
 
-program eclipse_oracle_token_2.aleo {
+program eclipse_oracle_token_4.aleo {
 
     // --------------------------------------------------------------------
     //  Basic token metadata
     // --------------------------------------------------------------------
-    const TOKEN_ID: field = 123456789101field;
-    const NAME: u128 = 332565922916059772120165u128;  // "EclipseOracle"
-    const SYMBOL: u128 = 1179406164u128;              // "EORC" 
+    const TOKEN_ID: field = 12345678987field;
+    const NAME: u128 = 332565922916059772120165u128;
+    const SYMBOL: u128 = 5202243u128; 
     const DECIMALS: u8   = 8u8;
     const MAX_SUPPLY:u128 = 1_000_000_000_000_000u128;
 
@@ -45,8 +45,8 @@ program eclipse_oracle_token_2.aleo {
 
     // Hard-coded destinations
     const TREASURY: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const STAKING_CONTRACT: address = eclipse_oracle_staking_2.aleo;
-    const AGGREGATE_CONTRACT:address = eclipse_oracle_aggregate_2.aleo;
+    const STAKING_CONTRACT: address = eclipse_oracle_staking_4.aleo;
+    const AGGREGATE_CONTRACT:address = eclipse_oracle_aggregate_4.aleo;
     const LIQUIDITY_VAULT: address = aleo1c39lrkdvnkchl79qza20vqemyytdmye7xa8wu6pqmzeqqe400yfq4qzg6w;
     const TEAM_VESTING: address = aleo18suj4glqvejgu753r8s2u8kn57n3macu2yw06rcjpmu5kldfnqxq6g8kqd;
 
