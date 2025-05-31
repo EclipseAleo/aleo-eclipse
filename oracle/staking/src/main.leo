@@ -35,7 +35,7 @@
 import eclipse_oracle_feed.aleo;     
 import token_registry.aleo;         
 
-program eclipse_oracle_staking_4.aleo {
+program eclipse_oracle_staking_2.aleo {
 
     // --------------------------------------------------------------------
     //  Constants
@@ -79,7 +79,7 @@ program eclipse_oracle_staking_4.aleo {
         let fut: Future =
             token_registry.aleo/transfer_public_as_signer(
                 TOKEN_ID,
-                eclipse_oracle_staking_4.aleo,
+                eclipse_oracle_staking_2.aleo,
                 amount              
             );
         return finalize_stake(fut, feed_id, amount, caller);
@@ -191,7 +191,7 @@ program eclipse_oracle_staking_4.aleo {
         public feed_id: field,
         public provider: address
     ) -> Future {
-        assert(self.caller == eclipse_oracle_aggregate_4.aleo);
+        assert(self.caller == eclipse_oracle_aggregate_2.aleo);
         return finalize_slash(feed_id, provider);
     }
 

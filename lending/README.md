@@ -81,14 +81,14 @@ Eclipse Lending is a decentralized overcollateralized **USDA stablecoin vault** 
 * LEO ≥ 2.5.0
 * Environment setup:
 
-  ```sh
-  export NETWORK=testnet
-  export ENDPOINT=https://api.explorer.provable.com/v1
-  export PK_CREATOR=<private_key>
-  export ADDR_CREATOR=<aleo_address>
-  export USDA_ID=44556677889914field
-  export ECLP_ID=123field
-  ```
+```sh
+export NETWORK=testnet
+export ENDPOINT=https://api.explorer.provable.com/v1
+export PK_CREATOR=APrivateKey1zkp8i2eGeSa6xuALaitK4fQMdkHBTMYXWDaXEjsGxrUPWXi
+export ADDR_CREATOR=aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv
+export USDA_ID=44556677889914field
+export ECLP_ID=123field
+```
 
 ### 1. Deploy all contracts
 

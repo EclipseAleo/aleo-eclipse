@@ -35,11 +35,11 @@
 // - `latest_price` is updated only by a validated (non-slashed) proposal.
 //
 import eclipse_oracle_feed.aleo;
-import eclipse_oracle_submit_4.aleo;
-import eclipse_oracle_staking_4.aleo;
+import eclipse_oracle_submit_2.aleo;
+import eclipse_oracle_staking_2.aleo;
 import token_registry.aleo;
 
-program eclipse_oracle_aggregate_4.aleo {
+program eclipse_oracle_aggregate_2.aleo {
 
     // ====================================================================
     //  Constants
@@ -89,7 +89,7 @@ program eclipse_oracle_aggregate_4.aleo {
         public caller: address
     ) {
         // Need to have at least MIN_PROVIDERS to propose a price
-        let count: u32 = eclipse_oracle_staking_4.aleo/provider_count.get_or_use(feed_id, 0u32);
+        let count: u32 = eclipse_oracle_staking_2.aleo/provider_count.get_or_use(feed_id, 0u32);
         assert(count >= MIN_PROVIDERS);
 
         assert(!aggregate_done.get_or_use(feed_id, false));
@@ -99,7 +99,7 @@ program eclipse_oracle_aggregate_4.aleo {
 
         // Proposer must have ≥ min_stake
         let key: field = feed_id + (caller as field);
-        let stake: u128 = eclipse_oracle_staking_4.aleo/stakes.get_or_use(key, 0u128);
+        let stake: u128 = eclipse_oracle_staking_2.aleo/stakes.get_or_use(key, 0u128);
         assert(stake >= (cfg.min_stake as u128));
 
         // Enforce cooldown between proposals
@@ -131,7 +131,7 @@ program eclipse_oracle_aggregate_4.aleo {
         public feed_id: field,
         public proposer: address
     ) -> Future {
-        let f_slash: Future = eclipse_oracle_staking_4.aleo/slash(feed_id, proposer);
+        let f_slash: Future = eclipse_oracle_staking_2.aleo/slash(feed_id, proposer);
         return finalize_slash(f_slash, feed_id, proposer, self.caller);
     }
 
@@ -157,46 +157,46 @@ program eclipse_oracle_aggregate_4.aleo {
         // ------------------------------------------------------------
         let median: u128 = proposal_median.get(feed_id);
         let threshold: u128 = cfg.slashing_threshold as u128;
-        let count: u32 = eclipse_oracle_staking_4.aleo/provider_count.get_or_use(feed_id, 0u32);
+        let count: u32 = eclipse_oracle_staking_2.aleo/provider_count.get_or_use(feed_id, 0u32);
 
         // Enumerate up to 8 providers (unrolled for gas determinism)
-        let slot0: field = feed_id + (0u32 as field); let p0: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot0);
-        let price0: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p0 as field), 0u128);
+        let slot0: field = feed_id + (0u32 as field); let p0: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot0);
+        let price0: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p0 as field), 0u128);
         let diff0: u128 = (price0 >= median) ? (price0 - median) : (median - price0);
         let cond0: u32 = (0u32 < count && diff0 <= threshold) ? 1u32 : 0u32;
 
-        let slot1: field = feed_id + (1u32 as field); let p1: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot1);
-        let price1: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p1 as field), 0u128);
+        let slot1: field = feed_id + (1u32 as field); let p1: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot1);
+        let price1: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p1 as field), 0u128);
         let diff1: u128 = (price1 >= median) ? (price1 - median) : (median - price1);
         let cond1: u32 = (1u32 < count && diff1 <= threshold) ? 1u32 : 0u32;
 
-        let slot2: field = feed_id + (2u32 as field); let p2: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot2);
-        let price2: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p2 as field), 0u128);
+        let slot2: field = feed_id + (2u32 as field); let p2: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot2);
+        let price2: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p2 as field), 0u128);
         let diff2: u128 = (price2 >= median) ? (price2 - median) : (median - price2);
         let cond2: u32 = (2u32 < count && diff2 <= threshold) ? 1u32 : 0u32;
 
-        let slot3: field = feed_id + (3u32 as field); let p3: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot3);
-        let price3: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p3 as field), 0u128);
+        let slot3: field = feed_id + (3u32 as field); let p3: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot3);
+        let price3: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p3 as field), 0u128);
         let diff3: u128 = (price3 >= median) ? (price3 - median) : (median - price3);
         let cond3: u32 = (3u32 < count && diff3 <= threshold) ? 1u32 : 0u32;
 
-        let slot4: field = feed_id + (4u32 as field); let p4: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot4);
-        let price4: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p4 as field), 0u128);
+        let slot4: field = feed_id + (4u32 as field); let p4: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot4);
+        let price4: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p4 as field), 0u128);
         let diff4: u128 = (price4 >= median) ? (price4 - median) : (median - price4);
         let cond4: u32 = (4u32 < count && diff4 <= threshold) ? 1u32 : 0u32;
 
-        let slot5: field = feed_id + (5u32 as field); let p5: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot5);
-        let price5: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p5 as field), 0u128);
+        let slot5: field = feed_id + (5u32 as field); let p5: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot5);
+        let price5: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p5 as field), 0u128);
         let diff5: u128 = (price5 >= median) ? (price5 - median) : (median - price5);
         let cond5: u32 = (5u32 < count && diff5 <= threshold) ? 1u32 : 0u32;
 
-        let slot6: field = feed_id + (6u32 as field); let p6: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot6);
-        let price6: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p6 as field), 0u128);
+        let slot6: field = feed_id + (6u32 as field); let p6: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot6);
+        let price6: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p6 as field), 0u128);
         let diff6: u128 = (price6 >= median) ? (price6 - median) : (median - price6);
         let cond6: u32 = (6u32 < count && diff6 <= threshold) ? 1u32 : 0u32;
 
-        let slot7: field = feed_id + (7u32 as field); let p7: address = eclipse_oracle_staking_4.aleo/provider_list.get(slot7);
-        let price7: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (p7 as field), 0u128);
+        let slot7: field = feed_id + (7u32 as field); let p7: address = eclipse_oracle_staking_2.aleo/provider_list.get(slot7);
+        let price7: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (p7 as field), 0u128);
         let diff7: u128 = (price7 >= median) ? (price7 - median) : (median - price7);
         let cond7: u32 = (7u32 < count && diff7 <= threshold) ? 1u32 : 0u32;
 
@@ -249,7 +249,7 @@ program eclipse_oracle_aggregate_4.aleo {
 
         // Finalizer must have min_stake (covers both proposer & relayers)
         let key: field = feed_id + (caller as field);
-        let stake: u128 = eclipse_oracle_staking_4.aleo/stakes.get_or_use(key, 0u128);
+        let stake: u128 = eclipse_oracle_staking_2.aleo/stakes.get_or_use(key, 0u128);
         assert(stake >= (cfg.min_stake as u128));
 
         // Commit median
@@ -301,7 +301,7 @@ program eclipse_oracle_aggregate_4.aleo {
         public feed_id: field,
         public provider: address
     ) -> Future {
-        let f_slash: Future = eclipse_oracle_staking_4.aleo/slash(feed_id, provider);
+        let f_slash: Future = eclipse_oracle_staking_2.aleo/slash(feed_id, provider);
         return finalize_slash_provider(f_slash, feed_id, provider);
     }
 
@@ -315,7 +315,7 @@ program eclipse_oracle_aggregate_4.aleo {
 
         // Compare provider’s last price vs current proposal median
         let median: u128 = proposal_median.get(feed_id);
-        let price: u128 = eclipse_oracle_submit_4.aleo/temp_price.get_or_use(feed_id + (provider as field), 0u128);
+        let price: u128 = eclipse_oracle_submit_2.aleo/temp_price.get_or_use(feed_id + (provider as field), 0u128);
         let diff: u128 = (price >= median) ? (price - median) : (median - price);
         assert(diff > (cfg.slashing_threshold as u128));  // only major outliers
 

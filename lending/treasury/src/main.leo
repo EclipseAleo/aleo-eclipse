@@ -9,13 +9,13 @@
 
 
 import token_registry.aleo;
-import eclipse_lending_usda_vault_9.aleo;
+import eclipse_lending_usda_vault_11.aleo;
 
 program eclipse_lending_treasury.aleo {
 
     const ADMIN: address  = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
     const ECLP_TOKEN_ID: field = 123field;
-    const USDA_TOKEN_ID: field = 44556677889915field;
+    const USDA_TOKEN_ID: field = 44556677889917field;
 
     mapping total_staked: field => u128;
 
@@ -59,7 +59,7 @@ program eclipse_lending_treasury.aleo {
         public actual_block: u32
     ) {
         fut.await();
-        let tot_fees:u128=eclipse_lending_usda_vault_9.aleo/total_fees.get_or_use(USDA_TOKEN_ID, 0u128);
+        let tot_fees:u128=eclipse_lending_usda_vault_11.aleo/cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128);
         assert_eq(tot_fees, fees_tot);
         assert(amount > 0u128);
         assert_eq(actual_block, block.height);
@@ -76,71 +76,70 @@ program eclipse_lending_treasury.aleo {
         private stake_pos: stake_position,
         public actual_block: u32,
         public fees_tot: u128
-    ) -> (token_registry.aleo/Token, Future) {
+    ) -> (token_registry.aleo/Token, stake_position, Future) {
+        let new_stake_pos: stake_position = stake_position {
+            owner: stake_pos.owner,
+            amount: stake_pos.amount - amount,
+            height: actual_block,
+            total_fees: fees_tot
+        };
+        assert(amount <= stake_pos.amount);
         let (token, fut): (token_registry.aleo/Token, Future) = token_registry.aleo/transfer_public_to_private(ECLP_TOKEN_ID,caller,amount, false);
-        return finalize_withdraw(fut, amount, caller);
+        return (token, new_stake_pos, finalize_withdraw(fut, amount, caller, actual_block, fees_tot));
     }
 
     async function finalize_withdraw(
         public fut: Future,
         public amount: u128,
-        public caller: address
+        public caller: address,
+        public actual_block: u32,
+        public fees_tot: u128
     ) {
         fut.await();
-
-        let prev: u128 = stakes.get_or_use(caller, 0u128);
-        assert(prev >= amount);
-
-        let new_stake: u128 = prev - amount;
-        stakes.set(caller, new_stake);
-
-        let tot: u128 = total_staked.get_or_use(ECLP_TOKEN_ID, 0u128);
-        total_staked.set(ECLP_TOKEN_ID, tot - amount);
-
-        let current_fees: u128 = eclipse_lending_usda_vault_7.aleo/total_fees.get_or_use(USDA_TOKEN_ID,0u128);
-        paid_fees.set(caller, current_fees);
+        assert_eq(actual_block, block.height);
+        assert(amount > 0u128);
+        let tot_fees: u128 = eclipse_lending_usda_vault_11.aleo/cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128);
+        assert_eq(tot_fees, fees_tot);
+        total_staked.set(ECLP_TOKEN_ID, total_staked.get_or_use(ECLP_TOKEN_ID, 0u128) - amount);
     }
 
 
-    /*
+
     // ----------------------------------------
     // 3. Claim fees
     // ----------------------------------------
     async transition claim(
-        public stake_amt: u128,  
-        public total: u128,
-        public last_paid: u128,
-        public current_fees: u128 
-    ) -> Future {
-        let delta: u128 = current_fees - last_paid;
-        assert(delta > 0u128);
-
-        let payout: u128 = (delta * stake_amt) / total;
-        assert(payout > 0u128);
-        let fut:Future = credits.aleo/transfer_public(self.caller, payout as u64);
-        return (finalize_claim(fut, stake_amt, total, last_paid, current_fees, self.caller));
+        private position: stake_position,
+        private caller: address,
+        public actual_block: u32,
+        public current_fees: u128,
+        public tot_staked: u128
+    ) -> (stake_position,credits.aleo/credits, Future) {
+        let new_stake_pos: stake_position = stake_position {
+            owner: position.owner,
+            amount: position.amount,
+            height: actual_block,
+            total_fees: current_fees
+        };
+        let claimable_fees: u128 = (current_fees- position.total_fees)* position.amount / tot_staked;
+        let (token, fut):(credits.aleo/credits, Future) = credits.aleo/transfer_public_to_private(caller, claimable_fees as u64);
+        return (new_stake_pos, token, finalize_claim(fut, actual_block, current_fees, tot_staked));
     }
 
     async function finalize_claim(
         public fut: Future,
-        public stake_amt: u128,
-        public total: u128,
-        public last_paid: u128,
+        public actual_block: u32,
         public current_fees: u128,
-        public caller: address
+        public tot_staked: u128
     ) {
         fut.await();
+        assert_eq(actual_block, block.height);
+        let tot_fees: u128 = eclipse_lending_usda_vault_11.aleo/cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128);
+        assert_eq(tot_fees, current_fees);
+        assert_eq(total_staked.get_or_use(ECLP_TOKEN_ID, 0u128), tot_staked);
+        
+    }
 
-        let s: u128 = stakes.get_or_use(caller, 0u128);
-        let tot: u128 = total_staked.get_or_use(ECLP_TOKEN_ID, 0u128);
-        let paid: u128 = paid_fees.get_or_use(caller, 0u128);
-        let fees: u128 = eclipse_lending_usda_vault_7.aleo/total_fees.get_or_use(USDA_TOKEN_ID, 0u128);
 
-        assert(s == stake_amt);
-        assert(tot == total);
-        assert(paid == last_paid);
-        assert(fees == current_fees);
-        paid_fees.set(caller, current_fees);
-    }*/
 
 }
