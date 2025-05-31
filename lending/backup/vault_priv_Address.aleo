@@ -1,5 +1,5 @@
 import token_registry.aleo;
-import eclipse_oracle_aggregate_2.aleo;
+import eclipse_oracle_aggregate_4.aleo;
 
 program eclipse_lending_usda_vault.aleo {
     const ADMIN:            address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
@@ -143,7 +143,7 @@ program eclipse_lending_usda_vault.aleo {
         public token_id: field
     ) {
         let cfg = allowed.get(token_id);
-        let oracle_price: u128 = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+        let oracle_price: u128 = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
         assert(price == oracle_price);
         future_mint.await();
 
@@ -185,7 +185,7 @@ program eclipse_lending_usda_vault.aleo {
         public price:u128,
     ) {
         let cfg          = allowed.get(pos_token_id);
-        let oracle_price = eclipse_oracle_aggregate_2.aleo/latest_price.get(cfg.feed_id);
+        let oracle_price = eclipse_oracle_aggregate_4.aleo/latest_price.get(cfg.feed_id);
         assert(price == oracle_price);
         
         future_burn.await();
