@@ -94,13 +94,15 @@ Eclipse Oracle is a decentralized oracle designed for **Aleo**. It lets an arbit
 - **Aleo account** with sufficient testnet credits  
 - LEO ≥ 2.5.0  
 - Environment variables:
-  ```sh
-  export NETWORK=testnet
-  export ENDPOINT=https://api.explorer.provable.com/v1
-  export PK_CREATOR=<private_key_creator>
-  export ADDR_CREATOR=<aleo_addr_creator>
-  export TOKEN_ID=123456789101field
-  ```
+```sh
+export NETWORK=testnet
+export ENDPOINT=https://api.explorer.provable.com/v1
+export PK_CREATOR=<private_key_creator>
+export ADDR_CREATOR=<aleo_addr_creator>
+export TOKEN_ID=12345678987field
+# Note 1: feel free to ask us to get some tokens (12345678987field) if you want to try it on your own.
+# Note 2 : ADMIN address credentials : public key - aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv ; private key : APrivateKey1zkp8i2eGeSa6xuALaitK4fQMdkHBTMYXWDaXEjsGxrUPWXi
+```
 
 ### 1. Deploy all contracts
 

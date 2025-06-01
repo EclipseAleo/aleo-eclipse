@@ -37,7 +37,7 @@ Eclipse Lending is a decentralized overcollateralized **USDA stablecoin vault** 
 
 | Contract     | File                                | Responsibility                                         |
 | ------------ | ----------------------------------- | ------------------------------------------------------ |
-| **Vault**    | `eclipse_lending_usda_vault_7.aleo` | Collateral deposit, USDA minting, burning, liquidation |
+| **Vault**    | `eclipse_lending_usda_vault_11.aleo` | Collateral deposit, USDA minting, burning, liquidation |
 | **Treasury** | `eclipse_lending_treasury.aleo`     | Stake ECLP tokens, receive and claim share of fees     |
 | **Token**    | `token_registry.aleo`               | USDA & ECLP token definitions and transfers            |
 | **Oracle**   | `eclipse_oracle_aggregate_4.aleo`   | Latest price feed required for minting and liquidation |
@@ -88,10 +88,12 @@ Eclipse Lending is a decentralized overcollateralized **USDA stablecoin vault** 
 ```sh
 export NETWORK=testnet
 export ENDPOINT=https://api.explorer.provable.com/v1
-export PK_CREATOR=APrivateKey1zkp8i2eGeSa6xuALaitK4fQMdkHBTMYXWDaXEjsGxrUPWXi
-export ADDR_CREATOR=aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv
-export USDA_ID=44556677889914field
-export ECLP_ID=123field
+export PK_CREATOR=your_private_key
+export ADDR_CREATOR=your_public_address
+export USDA_ID=44556677889917field
+export ECLP_ID=1234567898field 
+# Note 1 : feel free to ask us to get ECLP tokens if you want to try it on your own.
+# Note 2 : ADMIN address credentials : public key - aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv ; private key : APrivateKey1zkp8i2eGeSa6xuALaitK4fQMdkHBTMYXWDaXEjsGxrUPWXi
 ```
 
 ### 1. Deploy all contracts
@@ -103,7 +105,7 @@ leo deploy --network $NETWORK --private-key "$PK_CREATOR"
 ### 2. Initialize USDA token (one-shot)
 
 ```sh
-leo execute --program eclipse_lending_usda_vault_7.aleo \
+leo execute --program eclipse_lending_usda_vault_11.aleo \
            initialize $ADDR_CREATOR \
            --private-key "$PK_CREATOR" --broadcast --endpoint $ENDPOINT
 ```
@@ -128,21 +130,21 @@ leo execute --program eclipse_lending_treasury.aleo \
 
 ```sh
 # Deposit Aleo credits
-leo execute --program eclipse_lending_usda_vault_7.aleo \
+leo execute --program eclipse_lending_usda_vault_11.aleo \
            deposit <amount> <oracle_price> <last_id> $ADDR_USER <record> \
            --private-key "$PK_USER" --broadcast --endpoint $ENDPOINT
 ```
 
 ```sh
 # Mint USDA
-leo execute --program eclipse_lending_usda_vault_7.aleo \
+leo execute --program eclipse_lending_usda_vault_11.aleo \
            mint <usda_out> <price> <Position> \
            --private-key "$PK_USER" --broadcast --endpoint $ENDPOINT
 ```
 
 ```sh
 # Burn USDA
-leo execute --program eclipse_lending_usda_vault_7.aleo \
+leo execute --program eclipse_lending_usda_vault_11.aleo \
            burn <usda_in> <price> <Position> <token> \
            --private-key "$PK_USER" --broadcast --endpoint $ENDPOINT
 ```

@@ -16,7 +16,7 @@ program eclipse_lending_usda_vault_11.aleo {
     const ADMIN: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
     const USDA_TOKEN_ID: field = 44556677889917field;
     const PROVISION_FACTOR: u128 = 75u128;
-    const CONTRACT : address = eclipse_lending_usda_vault_12.aleo;   
+    const CONTRACT : address = eclipse_lending_usda_vault_11.aleo;   
     const USDA_FEED_ID: field = 2field;
     const LLTV : u128 = 85u128;
     const FEES: u64 = 1u64;
