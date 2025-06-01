@@ -25,6 +25,10 @@ Eclipse Lending is a decentralized overcollateralized **USDA stablecoin vault** 
 * 📤 Permissionless liquidation & collateral recovery
 * ⚖️ Proportional reward system for ECLP holders
 
+**Disclaimer**
+
+* Global flow is functional but some asserts may be missing for maximal security.
+
 ---
 
 ## 🏗 Architecture

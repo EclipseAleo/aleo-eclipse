@@ -12,15 +12,15 @@ import token_registry.aleo;
 import eclipse_oracle_aggregate_4.aleo;
 import credits.aleo;
 
-program eclipse_lending_usda_vault_12.aleo {
+program eclipse_lending_usda_vault_11.aleo {
     const ADMIN: address = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
-    const USDA_TOKEN_ID: field = 44556677889918field;
+    const USDA_TOKEN_ID: field = 44556677889917field;
     const PROVISION_FACTOR: u128 = 75u128;
     const CONTRACT : address = eclipse_lending_usda_vault_12.aleo;   
     const USDA_FEED_ID: field = 2field;
     const LLTV : u128 = 85u128;
     const FEES: u64 = 1u64;
-    const TREASURY: address = eclipse_lending_treasury.aleo;
+    const TREASURY: address = eclipse_lending_treasury_3.aleo;
 
     struct PositionMeta {
         coll_amt: u128,
@@ -173,6 +173,7 @@ program eclipse_lending_usda_vault_12.aleo {
         private pos: Position,
         private token: token_registry.aleo/Token
     ) -> (Position, token_registry.aleo/Token, Future) {
+        assert(token.token_id == USDA_TOKEN_ID);
         assert(pos.owner == self.caller);
         let (token_obtained, fut_burn): (token_registry.aleo/Token, Future) = token_registry.aleo/burn_private(token, usda_in);
         return (pos, token_obtained, finalize_burn(fut_burn, pos.id, usda_in, price));
