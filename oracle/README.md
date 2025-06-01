@@ -23,6 +23,10 @@ Eclipse Oracle is a decentralized oracle designed for **Aleo**. It lets an arbit
 - ⚙️ Configurable feeds (min stake, windows, thresholds)  
 - 📈 Linear token emissions to bootstrap liquidity & reward ecosystem actors
 
+**Disclaimer**
+
+* Global flow is functional but some asserts may be missing for maximal security.
+
 ---
 
 ## 🏗 Architecture
