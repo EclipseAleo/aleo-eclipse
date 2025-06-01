@@ -9,13 +9,14 @@
 
 
 import token_registry.aleo;
-import eclipse_lending_usda_vault_12.aleo;
+import eclipse_lending_usda_vault_11.aleo;
 
-program eclipse_lending_treasury.aleo {
+program eclipse_lending_treasury_3.aleo {
 
     const ADMIN: address  = aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv;
     const ECLP_TOKEN_ID: field = 1234567898field;
     const USDA_TOKEN_ID: field = 44556677889917field;
+    const TREASURY: address = eclipse_lending_treasury_3.aleo;
 
     mapping total_staked: field => u128;
 
@@ -40,7 +41,8 @@ program eclipse_lending_treasury.aleo {
         public fees_tot: u128,
         public actual_block: u32
     ) -> (token_registry.aleo/Token, stake_position, Future) {
-        let (token, fut):(token_registry.aleo/Token, Future) = token_registry.aleo/transfer_private_to_public(treasury.aleo, amount, token_input);
+        let (token, fut):(token_registry.aleo/Token, Future) = token_registry.aleo/transfer_private_to_public(TREASURY, amount, token_input);
+        assert(token.token_id == ECLP_TOKEN_ID);
         let stake_pos: stake_position = stake_position {
             owner: caller,
             amount: amount,
@@ -62,7 +64,9 @@ program eclipse_lending_treasury.aleo {
         let tot_fees:u128=eclipse_lending_usda_vault_11.aleo/cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128);
         assert_eq(tot_fees, fees_tot);
         assert(amount > 0u128);
-        assert_eq(actual_block, block.height);
+        // POC purposes, should be removed in production
+        assert(block.height <= actual_block + 60u32);
+        assert(block.height >= actual_block);
         total_staked.set(ECLP_TOKEN_ID, total_staked.get_or_use(ECLP_TOKEN_ID, 0u128) + amount);
     }
 
@@ -96,7 +100,9 @@ program eclipse_lending_treasury.aleo {
         public fees_tot: u128
     ) {
         fut.await();
-        assert_eq(actual_block, block.height);
+        // POC purposes, should be removed in production
+        assert(block.height <= actual_block + 60u32);
+        assert(block.height >= actual_block);
         assert(amount > 0u128);
         let tot_fees: u128 = eclipse_lending_usda_vault_11.aleo/cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128);
         assert_eq(tot_fees, fees_tot);
@@ -133,7 +139,9 @@ program eclipse_lending_treasury.aleo {
         public tot_staked: u128
     ) {
         fut.await();
-        assert_eq(actual_block, block.height);
+        // POC purposes, should be removed in production
+        assert(block.height <= actual_block + 60u32);
+        assert(block.height >= actual_block);
         let tot_fees: u128 = eclipse_lending_usda_vault_11.aleo/cumulated_fees.get_or_use(USDA_TOKEN_ID, 0u128);
         assert_eq(tot_fees, current_fees);
         assert_eq(total_staked.get_or_use(ECLP_TOKEN_ID, 0u128), tot_staked);
