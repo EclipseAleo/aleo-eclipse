@@ -93,7 +93,7 @@ export ADDR_CREATOR=your_public_address
 export USDA_ID=44556677889917field
 export ECLP_ID=1234567898field 
 # Note 1 : feel free to ask us to get ECLP tokens if you want to try it on your own.
-# Note 2 : ADMIN address credentials : public key - aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv ; private key : ***REMOVED***
+# Note 2 : ADMIN address credentials : public key - aleo1096dhxrwgf4xz857zru0uy4dxwgy4ztqqzg8fyl74luv3v79d5pslt2jjv ; private key : <your_private_key>
 ```
 
 ### 1. Deploy all contracts
